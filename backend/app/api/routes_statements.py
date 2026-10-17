@@ -1,0 +1,175 @@
+"""routes_statements.py
+
+WHAT THIS FILE DOES
+    Routes to build, read, sign and recompute emissions statements,
+    and to list the statements shared with an importer or verifier.
+
+SELECTIVE DISCLOSURE
+    The owner sees the full statement including the calculation trace.
+    Recipients (importers, verifiers) see the result, its status and
+    its verification state, but not the raw trace, which can reveal
+    plant volumes.
+"""
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.api.deps import Caller, get_caller, get_session, get_settings, require_role
+from app.api.routes_plant import own_installation
+from app.api.schemas import BuildStatementRequest
+from app.models import (
+    Installation, Organization, PrecursorRef, ShareGrant, Statement,
+    VerificationOpinion,
+)
+from app.services import trust
+from app.services.statements import (
+    METHODOLOGIES, build_statement, is_verified, recompute_stale,
+)
+
+router = APIRouter(prefix="/statements", tags=["statements"])
+
+
+def summary(session: Session, statement: Statement) -> dict:
+    installation = session.get(Installation, statement.installation_id)
+    owner = session.get(Organization, installation.organization_id)
+    opinions = session.scalars(
+        select(VerificationOpinion).where(
+            VerificationOpinion.statement_id == statement.id
+        )
+    ).all()
+    return {
+        "id": statement.id,
+        "supplier": owner.name,
+        "installation": installation.name,
+        "period_start": statement.period_start,
+        "period_end": statement.period_end,
+        "methodology": statement.methodology,
+        "status": statement.status,
+        "verified": is_verified(session, statement),
+        "see_by_product": statement.see_by_product,
+        "content_hash": statement.content_hash,
+        "signature_valid": trust.signature_is_valid(session, statement),
+        "opinions": [
+            {"verifier_org_id": o.verifier_org_id,
+             "conclusion": o.conclusion, "signed_at": o.signed_at}
+            for o in opinions
+        ],
+    }
+
+
+def full_detail(session: Session, statement: Statement) -> dict:
+    refs = session.scalars(
+        select(PrecursorRef).where(PrecursorRef.statement_id == statement.id)
+    ).all()
+    data = summary(session, statement)
+    data["total_tco2"] = str(statement.total_tco2)
+    data["trace"] = statement.trace
+    data["supersedes_id"] = statement.supersedes_id
+    data["inputs_hash"] = statement.inputs_hash
+    data["precursors"] = [
+        {"material": r.material_name, "tonnes": str(r.tonnes_used),
+         "upstream_statement_id": r.upstream_statement_id,
+         "uses_default": r.upstream_statement_id is None}
+        for r in refs
+    ]
+    return data
+
+
+def load_readable(session, caller, statement_id) -> Statement:
+    statement = session.get(Statement, statement_id)
+    if statement is None or not trust.can_read_summary(
+        session, caller.org, statement
+    ):
+        raise HTTPException(404, "Statement not found")
+    return statement
+
+
+@router.post("")
+def build(
+    body: BuildStatementRequest,
+    caller: Caller = Depends(require_role("supplier")),
+    session: Session = Depends(get_session),
+):
+    installation = own_installation(session, caller, body.installation_id)
+    if body.methodology not in METHODOLOGIES:
+        raise HTTPException(400, "Unknown methodology")
+    try:
+        statement = build_statement(
+            session, installation, body.period_start, body.period_end,
+            [p.model_dump(mode="json") for p in body.precursors],
+            body.methodology, caller.user.id,
+        )
+    except (ValueError, LookupError) as error:
+        raise HTTPException(400, str(error))
+    return full_detail(session, statement)
+
+
+@router.get("")
+def list_statements(
+    caller: Caller = Depends(get_caller),
+    session: Session = Depends(get_session),
+):
+    """Suppliers see their own. Others see what was shared with them."""
+    if caller.org.role == "supplier":
+        rows = session.scalars(
+            select(Statement)
+            .join(Installation, Installation.id == Statement.installation_id)
+            .where(Installation.organization_id == caller.org.id)
+            .order_by(Statement.id.desc())
+        ).all()
+    else:
+        rows = session.scalars(
+            select(Statement)
+            .join(ShareGrant, ShareGrant.statement_id == Statement.id)
+            .where(
+                ShareGrant.recipient_org_id == caller.org.id,
+                ShareGrant.revoked_at.is_(None),
+            )
+            .order_by(Statement.id.desc())
+        ).all()
+    return [summary(session, s) for s in rows]
+
+
+@router.get("/{statement_id}")
+def get_statement(
+    statement_id: int,
+    caller: Caller = Depends(get_caller),
+    session: Session = Depends(get_session),
+):
+    statement = load_readable(session, caller, statement_id)
+    if trust.can_read_evidence(session, caller.org, statement):
+        return full_detail(session, statement)
+    return summary(session, statement)
+
+
+@router.post("/{statement_id}/sign")
+def sign(
+    statement_id: int,
+    caller: Caller = Depends(require_role("supplier")),
+    session: Session = Depends(get_session),
+    settings=Depends(get_settings),
+):
+    statement = load_readable(session, caller, statement_id)
+    try:
+        trust.sign_statement(
+            session, settings.key_dir, caller.org, statement, caller.user.id
+        )
+    except (ValueError, PermissionError) as error:
+        raise HTTPException(400, str(error))
+    return summary(session, statement)
+
+
+@router.post("/recompute")
+def recompute(
+    caller: Caller = Depends(require_role("supplier")),
+    session: Session = Depends(get_session),
+):
+    """Rebuild this supplier's stale statements, upstream first."""
+    rebuilt = recompute_stale(session, caller.user.id)
+    mine = [
+        s for s in rebuilt
+        if session.get(Installation, s.installation_id).organization_id
+        == caller.org.id
+    ]
+    return [summary(session, s) for s in mine]
