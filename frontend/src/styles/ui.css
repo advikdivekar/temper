@@ -4,13 +4,13 @@
 /* Buttons */
 .btn {
   position: relative; display: inline-flex; align-items: center; justify-content: center;
-  gap: 8px; padding: 11px 18px; border-radius: 999px; border: 1px solid transparent;
+  gap: 8px; padding: 11px 18px; border-radius: 2px; border: 1px solid transparent;
   font-weight: 600; font-size: 14px; cursor: pointer; white-space: nowrap;
   transition: background 0.2s, box-shadow 0.2s, border-color 0.2s;
 }
 .btn.primary { background: var(--ink); color: white; box-shadow: var(--shadow-1); }
 .btn.primary:hover { background: var(--ink-2); box-shadow: var(--shadow-2); }
-.btn.ember { background: var(--ember); color: white; box-shadow: 0 8px 24px rgba(255, 90, 31, 0.35); }
+.btn.ember { background: var(--ember); color: white; }
 .btn.ember:hover { background: var(--ember-deep); }
 .btn.ghost { background: transparent; border-color: var(--line-strong); }
 .btn.ghost:hover { background: var(--white); border-color: var(--ink); }
@@ -56,7 +56,7 @@
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field label { font-size: 12px; font-weight: 600; color: var(--muted); }
 .input {
-  width: 100%; padding: 11px 14px; border-radius: 12px; background: var(--white);
+  width: 100%; padding: 11px 14px; border-radius: 2px; background: var(--white);
   border: 1px solid var(--line-strong); outline: none; transition: border-color 0.2s, box-shadow 0.2s;
 }
 .input:focus { border-color: var(--ember); box-shadow: 0 0 0 4px rgba(255, 90, 31, 0.14); }
@@ -64,7 +64,7 @@
 
 /* Skeleton loading */
 .skeleton {
-  border-radius: 10px;
+  border-radius: 2px;
   background: linear-gradient(100deg, var(--paper-2) 30%, var(--white) 50%, var(--paper-2) 70%);
   background-size: 200% 100%; animation: shimmer 1.3s linear infinite;
 }
@@ -77,7 +77,7 @@
 }
 .toast {
   display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px;
-  border-radius: 16px; background: var(--ink); color: white; box-shadow: var(--shadow-2);
+  border-radius: 4px; background: var(--ink); color: white; box-shadow: var(--shadow-2);
 }
 .toast.error { background: var(--bad); }
 .toast.success { background: var(--good); }

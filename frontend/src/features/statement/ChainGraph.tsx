@@ -89,7 +89,7 @@ export function ChainGraph({ chain }: { chain: Chain }) {
             transition={{ delay: i * 0.12, type: "spring", stiffness: 200, damping: 20 }}
             style={{ cursor: node.id ? "pointer" : "default" }}
             onClick={() => node.id && navigate(`/statements/${node.id}`)}>
-            <rect x={node.x} y={node.y} width={BOX_W} height={BOX_H} rx="16"
+            <rect x={node.x} y={node.y} width={BOX_W} height={BOX_H} rx="2"
               fill={node.ghost ? "#f3f0ea" : "#fff"} stroke={node.verified ? "#0f9d6b" : "#0e0e10"}
               strokeOpacity={node.verified ? 1 : 0.15} strokeWidth={node.verified ? 2 : 1}
               strokeDasharray={node.ghost ? "5 5" : "0"} />

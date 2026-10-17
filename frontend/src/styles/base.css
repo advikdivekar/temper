@@ -21,8 +21,8 @@ button, input, select { font: inherit; color: inherit; }
 .muted { color: var(--muted); }
 .ember { color: var(--ember); }
 .eyebrow {
-  font-size: 12px; font-weight: 600; letter-spacing: 0.14em;
-  text-transform: uppercase; color: var(--muted);
+  font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
