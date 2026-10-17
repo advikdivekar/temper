@@ -43,6 +43,7 @@ class Statement(Base):
     see_by_product: Mapped[dict] = mapped_column(JSON)
     trace: Mapped[list] = mapped_column(JSON)
     breakdown: Mapped[dict] = mapped_column(JSON, default=dict)
+    record_ids: Mapped[list] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime]
     supersedes_id: Mapped[int | None] = mapped_column(
         ForeignKey("statement.id"), default=None

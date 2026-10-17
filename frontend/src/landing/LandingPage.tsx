@@ -1,9 +1,10 @@
 // landing/LandingPage.tsx
-// The public front door, built as seven connected scenes:
-//   1 Hero (explorable world)       5 Technical explainer
-//   2 Statement and facts           6 Principles
-//   3 The problem (default markup)  7 Enter the demo
-//   4 How it works
+// The public front door, built as nine connected scenes:
+//   1 Hero (full screen heat field)   6 Technical explainer
+//   2 The supply chain (hold to temper) 7 Architecture
+//   3 Statement and facts              8 Principles
+//   4 The problem (default markup)     9 Enter the demo
+//   5 How it works (scroll slide deck)
 // plus a floating top nav, a floating bottom pill and a scene counter
 // that follow you down the page.
 
@@ -11,27 +12,31 @@ import { EnterProvider } from "./EnterContext";
 import { FloatingCta } from "./parts/FloatingCta";
 import { FloatingNav } from "./parts/FloatingNav";
 import { SceneIndex } from "./parts/SceneIndex";
+import { ArchScene } from "./scenes/ArchScene";
+import { DeckScene } from "./scenes/DeckScene";
 import { DefaultScene } from "./scenes/DefaultScene";
 import { EnterScene } from "./scenes/EnterScene";
 import { ExplainerScene } from "./scenes/ExplainerScene";
 import { HeroScene } from "./scenes/HeroScene";
-import { HowScene } from "./scenes/HowScene";
 import { PrinciplesScene } from "./scenes/PrinciplesScene";
 import { SiteFooter } from "./scenes/SiteFooter";
 import { StatementScene } from "./scenes/StatementScene";
+import { WorldScene } from "./scenes/WorldScene";
 
 export function LandingPage() {
   return (
     <EnterProvider>
       <div className="lp">
         <FloatingNav />
-        <SceneIndex total={7} />
+        <SceneIndex total={9} />
         <main>
           <HeroScene />
+          <WorldScene />
           <StatementScene />
           <DefaultScene />
-          <HowScene />
+          <DeckScene />
           <ExplainerScene />
+          <ArchScene />
           <PrinciplesScene />
           <EnterScene />
         </main>

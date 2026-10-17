@@ -19,7 +19,7 @@ export function ImporterSimulator({ statement }: { statement: Statement }) {
   const saving = perTonne * tonnes * price;
 
   return (
-    <div className="card dark stack sticky">
+    <div className="card dark stack">
       <span className="eyebrow light">Your saving versus default</span>
       <div className="serif" style={{ fontSize: 52, lineHeight: 1 }}>
         <LiveNumber value={saving} prefix="€" />

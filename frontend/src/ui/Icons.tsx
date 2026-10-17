@@ -34,15 +34,4 @@ export function Icon({
   );
 }
 
-export function Logo({ size = 28 }: { size?: number }) {
-  return (
-    <span className="logo">
-      <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden>
-        <rect width="32" height="32" rx="9" fill="#FF5A1F" />
-        <path d="M9 22V10h14M16 10v12" stroke="white" strokeWidth="3"
-          fill="none" strokeLinecap="round" />
-      </svg>
-      <span>Temper</span>
-    </span>
-  );
-}
+export { Logo } from "../brand/Brand";

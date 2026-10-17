@@ -2,13 +2,13 @@
 // The closing footer: sources, honest limits, and an oversized
 // wordmark that fades into the page.
 
-import { Logo } from "../../ui/Icons";
+import { Mark, Wordmark } from "../../brand/Brand";
 
 export function SiteFooter() {
   return (
     <footer className="site-footer">
       <div className="foot-grid">
-        <div><Logo size={22} /></div>
+        <div className="foot-brand"><Mark size={26} /><Wordmark height={12} tone="light" /></div>
         <div className="mono foot-col">
           <span>SOURCES</span>
           <p>GTRI via AlCircle, EY, CMS, DQS, EU Official Journal (Regulation 2023/956 and Implementing Regulation 2025/2547).</p>
@@ -18,7 +18,7 @@ export function SiteFooter() {
           <p>Demo data is synthetic. Default values and factors are unverified placeholders. Not a regulatory filing.</p>
         </div>
       </div>
-      <div className="wordmark serif" aria-hidden>temper</div>
+      <div className="wordmark-big" aria-hidden><Wordmark height={400} tone="light" fluid /></div>
     </footer>
   );
 }

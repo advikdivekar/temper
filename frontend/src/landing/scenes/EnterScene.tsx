@@ -17,7 +17,7 @@ const LOOKS: Record<string, { label: string; line: string }> = {
 export function EnterScene() {
   const { personas, enter } = useEnter();
   return (
-    <section id="enter" className="dark-scene" data-scene="7">
+    <section id="enter" className="dark-scene" data-scene="9">
       <Reveal>
         <span className="mono kicker">LIVE DEMO</span>
         <h2 className="serif h2">Step into the supply chain.</h2>

@@ -35,6 +35,24 @@ human confirms. No emissions number ever comes from a language model.
 - Short functions, short lines (about 80 characters), plain comments.
 - No hyphens in file names or in comments.
 
+## What is in the product
+
+| Area | Pages and features |
+|---|---|
+| Public | Landing page (nine scenes), interactive architecture page, public pack verifier |
+| Everyone | Overview dashboard, supply chain network, requests inbox, audit log, reference data, organization and signing key, command palette (Cmd+K), notifications |
+| Supplier | Guided plant workspace, ledger with time travel, evidence vault with re-verification, statements with evidence trail and versions |
+| Verifier | Review queue, review desk, signed opinions |
+| Importer | Supplier portfolio, savings simulator |
+
+The demo workspace is seeded automatically the first time you enter as a
+persona: four quarters of data across four organizations, signed and verified
+statements, a mid flight upstream revision (so one statement is stale and needs
+recomputing), and open requests. Everything is synthetic.
+
+Brand: `frontend/src/brand/` holds the wordmark (a folded ribbon M) and mark,
+generated as vector outlines. SVG copies are in `frontend/public/brand/`.
+
 ## Run it
 
 Backend (API docs at http://localhost:8000/docs):
@@ -47,6 +65,9 @@ Frontend (http://localhost:3000):
     cd frontend && npm install && npm run dev
 
 Everything with Docker (untested so far): `docker compose up --build`
+
+To reset the demo, stop the backend, delete `backend/temper.db` and
+`backend/storage/`, and start it again.
 
 Tests:
 

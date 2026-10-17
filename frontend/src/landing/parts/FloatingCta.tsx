@@ -12,20 +12,30 @@ import { useEnter } from "../EnterContext";
 export function FloatingCta() {
   const { personas, enter } = useEnter();
   const [past, setPast] = useState(false);
-  const [atEnter, setAtEnter] = useState(false);
+  const [covered, setCovered] = useState<Record<string, boolean>>({});
   const [menu, setMenu] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setPast(window.scrollY > window.innerHeight * 0.7);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    const target = document.getElementById("enter");
-    const watcher = new IntersectionObserver(([entry]) => setAtEnter(entry.isIntersecting), { threshold: 0.3 });
-    if (target) watcher.observe(target);
+    // Hide the pill where it would cover something: the persona list,
+    // and the slide deck's progress rail.
+    const watcher = new IntersectionObserver((entries) => {
+      setCovered((c) => {
+        const next = { ...c };
+        for (const e of entries) next[e.target.id] = e.isIntersecting;
+        return next;
+      });
+    }, { threshold: 0.3 });
+    for (const id of ["enter", "how"]) {
+      const target = document.getElementById(id);
+      if (target) watcher.observe(target);
+    }
     return () => { window.removeEventListener("scroll", onScroll); watcher.disconnect(); };
   }, []);
 
-  const show = past && !atEnter;
+  const show = past && !covered.enter && !covered.how;
   return (
     <AnimatePresence>
       {show && (

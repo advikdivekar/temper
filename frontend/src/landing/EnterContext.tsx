@@ -39,12 +39,15 @@ export function EnterProvider({ children }: { children: ReactNode }) {
   async function enter(persona: Persona) {
     setEntering(persona);
     try {
+      // Make sure the demo workspace exists (a no-op after the first
+      // time), then sign in as the chosen persona.
+      await api("/demo/seed", { method: "POST" });
       const [result] = await Promise.all([
         api<{ token: string }>(`/demo/enter/${persona.key}`, { method: "POST" }),
         new Promise((done) => setTimeout(done, 900)),
       ]);
       await signIn(result.token);
-      navigate(persona.role === "supplier" ? "/plant" : "/statements");
+      navigate("/overview");
     } catch (problem) {
       setEntering(null);
       toast.error("Could not enter", (problem as Error).message);

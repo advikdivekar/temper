@@ -24,7 +24,7 @@ const TRACE = [
 
 export function PrinciplesScene() {
   return (
-    <section id="principles" className="paper-scene" data-scene="6">
+    <section id="principles" className="paper-scene" data-scene="8">
       <Reveal>
         <span className="mono kicker dark">PRINCIPLES</span>
         <h2 className="serif h2">Not a chatbot. A system of record.</h2>

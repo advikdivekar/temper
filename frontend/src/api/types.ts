@@ -95,6 +95,7 @@ export interface Chain {
 export interface Statement {
   id: number;
   supplier: string;
+  supplier_org_id: number;
   installation: string;
   period_start: string;
   period_end: string;
@@ -113,6 +114,7 @@ export interface Statement {
   breakdown?: Breakdown;
   timeline?: TimelineEvent[];
   precursors?: Precursor[];
+  inputs?: StatementInput[];
   supersedes_id?: number | null;
   inputs_hash?: string;
 }
@@ -123,4 +125,138 @@ export interface Savings {
   difference_per_tonne: string;
   saving_eur: string;
   note: string;
+}
+
+export interface StatementInput {
+  record_id: number;
+  kind: string;
+  name: string;
+  amount: string;
+  unit: string;
+  evidence_id: number;
+  filename: string;
+  sha256: string;
+}
+
+export interface Attention {
+  kind: "stale" | "unsigned" | "unverified" | "request";
+  severity: "high" | "medium";
+  title: string;
+  detail: string;
+  link: string;
+}
+
+export interface ActivityItem {
+  id: number;
+  at: string;
+  action: string;
+  detail: string;
+  actor: string;
+  hash: string;
+}
+
+export interface Overview {
+  role: Role;
+  kpis: {
+    statements: number;
+    verified: number;
+    verified_share: number;
+    stale: number;
+    avg_cut_vs_default: number;
+    plants: number;
+    open_requests: number;
+  };
+  attention: Attention[];
+  activity: ActivityItem[];
+  statements: Statement[];
+}
+
+export interface AuditLog {
+  intact: boolean;
+  first_bad_entry: number | null;
+  total_entries: number;
+  entries: ActivityItem[];
+}
+
+export interface NetNode {
+  id: number;
+  name: string;
+  role: string;
+  statements: number;
+  verified: number;
+  you: boolean;
+}
+
+export interface NetEdge {
+  from: number;
+  to: number;
+  material: string;
+  links: number;
+  verified: number;
+  kind?: string;
+}
+
+export interface NetworkData { nodes: NetNode[]; edges: NetEdge[] }
+
+export interface RequestRow {
+  id: number;
+  direction: "incoming" | "outgoing";
+  other: string;
+  other_role: string;
+  kind: string;
+  message: string;
+  status: string;
+  statement_id: number | null;
+  created_at: string;
+  resolved_at: string | null;
+}
+
+export interface LedgerRow {
+  id: number;
+  kind: string;
+  name: string;
+  amount: string;
+  unit: string;
+  valid_from: string;
+  valid_to: string;
+  evidence_id: number;
+  recorded_at: string;
+  supersedes_id: number | null;
+}
+
+export interface EvidenceRow {
+  id: number;
+  filename: string;
+  sha256: string;
+  size_bytes: number;
+  uploaded_at: string;
+  used_by_records: number;
+}
+
+export interface ReferenceData {
+  factors: { id: number; name: string; value: string; per_unit: string; source: string; version: string }[];
+  defaults: { id: number; cn_code: string; country: string; base: string; source: string; version: string; marked_up: Record<string, string> }[];
+  methodologies: { key: string; includes_indirect: boolean; see_decimals: number; markup: Record<string, string> }[];
+}
+
+export interface OrgInfo {
+  id: number;
+  name: string;
+  role: Role;
+  public_key: string;
+  key_fingerprint: string;
+  members: { id: number; email: string }[];
+}
+
+export interface PackCheck { id: string; label: string; ok: boolean; detail: string }
+export interface PackResult { valid: boolean; checks: PackCheck[] }
+
+export interface VersionRow {
+  id: number;
+  status: string;
+  created_at: string;
+  total_tco2: string;
+  see_by_product: Record<string, string>;
+  supersedes_id: number | null;
+  current: boolean;
 }

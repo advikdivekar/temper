@@ -33,6 +33,16 @@ from app.services.statements import (
 router = APIRouter(prefix="/statements", tags=["statements"])
 
 
+def latest_only(session: Session, rows: list[Statement]) -> list[Statement]:
+    """Drop statements that a newer version has replaced."""
+    replaced = {
+        r.supersedes_id for r in session.scalars(
+            select(Statement).where(Statement.supersedes_id.is_not(None))
+        )
+    }
+    return [s for s in rows if s.id not in replaced]
+
+
 def safe_default_see(session: Session, statement: Statement) -> dict:
     """Default SEE per product, or empty if it cannot be computed."""
     try:
@@ -52,6 +62,7 @@ def summary(session: Session, statement: Statement) -> dict:
     return {
         "id": statement.id,
         "supplier": owner.name,
+        "supplier_org_id": owner.id,
         "installation": installation.name,
         "period_start": statement.period_start,
         "period_end": statement.period_end,
@@ -80,6 +91,7 @@ def full_detail(session: Session, statement: Statement) -> dict:
     data["total_tco2"] = str(statement.total_tco2)
     data["trace"] = statement.trace
     data["breakdown"] = statement.breakdown
+    data["inputs"] = input_records(session, statement)
     data["timeline"] = timeline(session, statement, with_shares=True)
     data["supersedes_id"] = statement.supersedes_id
     data["inputs_hash"] = statement.inputs_hash
@@ -90,6 +102,24 @@ def full_detail(session: Session, statement: Statement) -> dict:
         for r in refs
     ]
     return data
+
+
+def input_records(session: Session, statement: Statement) -> list[dict]:
+    """The exact ledger rows this statement was built from, each with
+    the evidence file behind it. This is the drill down from a figure
+    to its proof."""
+    from app.models import ActivityRecord, Evidence
+    rows = []
+    for record_id in statement.record_ids or []:
+        record = session.get(ActivityRecord, record_id)
+        evidence = session.get(Evidence, record.evidence_id)
+        rows.append({
+            "record_id": record.id, "kind": record.kind, "name": record.name,
+            "amount": str(record.amount), "unit": record.unit,
+            "evidence_id": evidence.id, "filename": evidence.filename,
+            "sha256": evidence.sha256,
+        })
+    return rows
 
 
 def timeline(
@@ -186,6 +216,7 @@ def list_statements(
             .where(Installation.organization_id == caller.org.id)
             .order_by(Statement.id.desc())
         ).all()
+        rows = latest_only(session, rows)
     else:
         rows = session.scalars(
             select(Statement)
@@ -313,3 +344,27 @@ def chain(
             if ref.upstream_statement_id:
                 to_visit.append(ref.upstream_statement_id)
     return {"root": root.id, "nodes": nodes, "edges": edges}
+
+
+@router.get("/{statement_id}/versions")
+def versions(
+    statement_id: int,
+    caller: Caller = Depends(get_caller),
+    session: Session = Depends(get_session),
+):
+    """Every version of this statement for its period, oldest first,
+    so a revision can be compared with the version it replaced."""
+    statement = load_readable(session, caller, statement_id)
+    rows = session.scalars(
+        select(Statement).where(
+            Statement.installation_id == statement.installation_id,
+            Statement.period_start == statement.period_start,
+            Statement.period_end == statement.period_end,
+        ).order_by(Statement.id)
+    ).all()
+    return [
+        {"id": s.id, "status": s.status, "created_at": s.created_at,
+         "total_tco2": str(s.total_tco2), "see_by_product": s.see_by_product,
+         "supersedes_id": s.supersedes_id, "current": s.id == max(r.id for r in rows)}
+        for s in rows
+    ]

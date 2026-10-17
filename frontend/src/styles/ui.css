@@ -88,3 +88,30 @@
 .logo { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; letter-spacing: -0.02em; }
 .btn-wrap { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .btn-wrap .reason { color: var(--warn); font-size: 12px; font-weight: 500; max-width: 260px; }
+
+/* Tabs */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.tabs button { position: relative; background: none; border: 0; padding: 12px 14px; cursor: pointer; color: var(--muted); font-weight: 500; white-space: nowrap; }
+.tabs button:hover, .tabs button.on { color: var(--ink); }
+.tab-line { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--ember); }
+.tab-count { margin-left: 8px; font-family: var(--font-mono); font-size: 11px; background: var(--paper-2); padding: 1px 6px; border-radius: 99px; }
+
+/* Charts */
+.chart { color: var(--ink); }
+.chart-axis { font-family: var(--font-mono); font-size: 10px; fill: var(--muted); }
+.chart-legend { display: flex; gap: 20px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin-top: 6px; }
+.chart-legend i { display: inline-block; width: 10px; height: 3px; margin-right: 8px; vertical-align: middle; }
+.chart-legend b { color: var(--ink); font-family: var(--font-mono); font-weight: 500; }
+
+/* Tables */
+.table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table th { text-align: left; font-family: var(--font-mono); font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 10px 12px; border-bottom: 1px solid var(--line-strong); background: transparent; }
+.table td { padding: 14px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.table tr:hover td { background: rgba(14, 14, 16, 0.025); }
+.table .num { text-align: right; font-family: var(--font-mono); }
+.table .struck td { opacity: 0.45; text-decoration: line-through; }
+.page-desc { max-width: 640px; margin-top: 6px; }
+.toolbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+@media (max-width: 960px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }

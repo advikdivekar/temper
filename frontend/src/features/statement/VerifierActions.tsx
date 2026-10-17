@@ -37,13 +37,13 @@ export function VerifierActions({ statement, onChange }: { statement: Statement;
 
   if (statement.status !== "signed") {
     return (
-      <div className="card sticky"><span className="eyebrow">Review desk</span>
+      <div className="card"><span className="eyebrow">Review desk</span>
         <p className="muted" style={{ marginTop: 8 }}>The supplier must sign this statement before it can be verified.</p></div>
     );
   }
 
   return (
-    <div className="card stack sticky">
+    <div className="card stack">
       <span className="eyebrow">Review desk</span>
       <AnimatePresence>
         {done && (

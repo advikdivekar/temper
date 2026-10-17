@@ -27,7 +27,7 @@ export function DefaultScene() {
   const current = BASE * (1 + YEARS[index].markup);
 
   return (
-    <section id="problem" className="dark-scene" data-scene="3">
+    <section id="problem" className="dark-scene" data-scene="4">
       <div className="split-2">
         <Reveal className="col-text">
           <span className="mono kicker">THE PROBLEM</span>

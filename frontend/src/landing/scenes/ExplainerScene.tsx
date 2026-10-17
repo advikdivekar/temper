@@ -41,7 +41,7 @@ export function ExplainerScene() {
   const py = (v: number) => 230 - ((v - 2) / 3.2) * 190;
 
   return (
-    <section id="explorer" className="dark-scene" data-scene="5">
+    <section id="explorer" className="dark-scene" data-scene="6">
       <div className="split-2 wide">
         <Reveal className="col-text">
           <span className="mono kicker">TECHNICAL EXPLAINER</span>

@@ -33,7 +33,7 @@ export function SupplierActions({ statement, onChange }: Props) {
   const activeShares = (statement.timeline ?? []).filter((e) => e.event === "shared" && !e.revoked);
 
   return (
-    <div className="card stack sticky">
+    <div className="card stack">
       <span className="eyebrow">Your actions</span>
 
       {statement.status === "stale" && (

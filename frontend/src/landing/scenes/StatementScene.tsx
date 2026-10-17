@@ -20,7 +20,7 @@ const FACTS = [
 
 export function StatementScene() {
   return (
-    <section className="paper-scene" data-scene="2">
+    <section className="paper-scene" data-scene="3">
       <Reveal>
         <p className="statement mono">
           EU importers now pay for the carbon inside <Tag>STEEL</Tag>, <Tag>ALUMINIUM</Tag> and

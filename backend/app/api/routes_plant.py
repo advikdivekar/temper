@@ -5,6 +5,8 @@ WHAT THIS FILE DOES
     installations, goods, evidence files and activity records.
 """
 
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -13,7 +15,7 @@ from app.api.deps import Caller, get_session, get_settings, require_role
 from app.api.schemas import (
     CorrectionRequest, GoodRequest, InstallationRequest, RecordRequest,
 )
-from app.evidence import save_evidence
+from app.evidence import save_evidence, verify_evidence
 from app.ledger import add_record, correct_record, records_as_of
 from app.models import ActivityRecord, Evidence, Good, Installation
 from app.services.audit import append_audit
@@ -98,15 +100,39 @@ def list_evidence(
     caller: Caller = Depends(supplier_only),
     session: Session = Depends(get_session),
 ):
+    """Your evidence vault: every file with its fingerprint and use."""
     rows = session.scalars(
         select(Evidence).where(Evidence.organization_id == caller.org.id)
         .order_by(Evidence.id.desc())
     ).all()
-    return [
-        {"id": e.id, "filename": e.filename, "sha256": e.sha256,
-         "size_bytes": e.size_bytes}
-        for e in rows
-    ]
+    result = []
+    for e in rows:
+        used = len(session.scalars(
+            select(ActivityRecord).where(ActivityRecord.evidence_id == e.id)
+        ).all())
+        result.append({
+            "id": e.id, "filename": e.filename, "sha256": e.sha256,
+            "size_bytes": e.size_bytes, "uploaded_at": e.uploaded_at,
+            "used_by_records": used,
+        })
+    return result
+
+
+@router.post("/evidence/{evidence_id}/verify")
+def verify_evidence_file(
+    evidence_id: int,
+    caller: Caller = Depends(supplier_only),
+    session: Session = Depends(get_session),
+    settings=Depends(get_settings),
+):
+    """Re-hash the stored file and compare it with its recorded hash."""
+    record = session.get(Evidence, evidence_id)
+    if record is None or record.organization_id != caller.org.id:
+        raise HTTPException(404, "Evidence not found")
+    ok = verify_evidence(settings.evidence_dir, record)
+    append_audit(session, caller.user.id, "evidence_verified",
+                 f"evidence {record.id}: {'intact' if ok else 'MISMATCH'}")
+    return {"id": record.id, "sha256": record.sha256, "intact": ok}
 
 
 @router.post("/records")
@@ -143,19 +169,43 @@ def correct(
     return {"id": new.id, "supersedes_id": old.id}
 
 
+def _record_json(r: ActivityRecord) -> dict:
+    return {"id": r.id, "kind": r.kind, "name": r.name,
+            "amount": str(r.amount), "unit": r.unit,
+            "valid_from": r.valid_from, "valid_to": r.valid_to,
+            "evidence_id": r.evidence_id, "recorded_at": r.recorded_at,
+            "supersedes_id": r.supersedes_id}
+
+
 @router.get("/installations/{installation_id}/records")
 def list_records(
+    installation_id: int,
+    as_of: datetime | None = None,
+    caller: Caller = Depends(supplier_only),
+    session: Session = Depends(get_session),
+):
+    """The ledger as it stood at a moment (default: now).
+
+    Passing as_of is "time travel": you see exactly what the records
+    said on that date, before any later corrections.
+    """
+    own_installation(session, caller, installation_id)
+    rows = [r for r in records_as_of(session, as_of)
+            if r.installation_id == installation_id]
+    return [_record_json(r) for r in rows]
+
+
+@router.get("/installations/{installation_id}/ledger")
+def ledger_history(
     installation_id: int,
     caller: Caller = Depends(supplier_only),
     session: Session = Depends(get_session),
 ):
+    """Every row ever written, including superseded ones, oldest first."""
     own_installation(session, caller, installation_id)
-    rows = [r for r in records_as_of(session)
-            if r.installation_id == installation_id]
-    return [
-        {"id": r.id, "kind": r.kind, "name": r.name,
-         "amount": str(r.amount), "unit": r.unit,
-         "valid_from": r.valid_from, "valid_to": r.valid_to,
-         "evidence_id": r.evidence_id}
-        for r in rows
-    ]
+    rows = session.scalars(
+        select(ActivityRecord)
+        .where(ActivityRecord.installation_id == installation_id)
+        .order_by(ActivityRecord.id)
+    ).all()
+    return [_record_json(r) for r in rows]

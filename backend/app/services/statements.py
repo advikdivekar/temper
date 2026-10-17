@@ -55,6 +55,12 @@ METHODOLOGIES = {
 }
 
 
+def normalize_tonnes(value) -> str:
+    """One exact text form for tonnes, so hashes never depend on how a
+    client wrote the number (100 or 100.0 or 100.000000)."""
+    return format(Decimal(str(value)).quantize(Decimal("0.000001")), "f")
+
+
 def _now() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
@@ -173,7 +179,7 @@ def prepare(
         ref_hashes.append(
             {
                 "material": item["material_name"],
-                "tonnes": item["tonnes"],
+                "tonnes": normalize_tonnes(item["tonnes"]),
                 "upstream": upstream_id if verified else None,
                 "upstream_hash": upstream.content_hash if verified else None,
                 "default_id": default_row.id,
@@ -257,6 +263,7 @@ def build_statement(
         see_by_product={k: str(v) for k, v in result.see_by_product.items()},
         trace=result.trace,
         breakdown=result.breakdown,
+        record_ids=sorted(r.id for r in records),
         created_at=_now(),
         supersedes_id=previous.id if previous else None,
     )
