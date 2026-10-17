@@ -1,13 +1,17 @@
 {
-  "note": "PLACEHOLDER VALUES. Replace with the official values and cite the source before any real use.",
+  "note": "Fuel factors are IPCC 2006 defaults. Only natural gas is confirmed in a document we hold (Guidance No. 5d, Table 4-12). The others must be checked against Section G of Annex II to Implementing Regulation (EU) 2025/2547 before real use.",
   "factors": [
-    {"name": "coal", "value": "2.4", "per_unit": "tonne",
-     "source": "placeholder", "version": "placeholder_v1"},
-    {"name": "natural_gas", "value": "0.056", "per_unit": "gj",
-     "source": "placeholder", "version": "placeholder_v1"},
+    {"name": "natural_gas", "value": "0.0561", "per_unit": "gj",
+     "source": "IPCC 2006 default, 56.1 tCO2 per TJ, as used in Guidance No. 5d Table 4-12",
+     "version": "ipcc2006_v1", "status": "verified_guidance"},
+    {"name": "coal", "value": "2.44068", "per_unit": "tonne",
+     "source": "IPCC 2006 default for other bituminous coal: 94.6 tCO2/TJ x 25.8 TJ/Gg. Unverified against IR 2025/2547 Annex II section G. Indian coal has a much lower calorific value, so measure it.",
+     "version": "ipcc2006_v1", "status": "unverified"},
     {"name": "diesel", "value": "0.0741", "per_unit": "gj",
-     "source": "placeholder", "version": "placeholder_v1"},
-    {"name": "grid_india", "value": "0.00071", "per_unit": "kwh",
-     "source": "placeholder", "version": "placeholder_v1"}
+     "source": "IPCC 2006 default for gas/diesel oil, 74.1 tCO2 per TJ. Unverified against IR 2025/2547 Annex II section G.",
+     "version": "ipcc2006_v1", "status": "unverified"},
+    {"name": "grid_india", "value": "0.000727", "per_unit": "kwh",
+     "source": "CEA FY2023-24 grid figure of 0.727 tCO2/MWh as reported by a secondary source. Unverified, and not used for iron and steel, where only direct emissions count.",
+     "version": "cea_fy2324_v1", "status": "unverified"}
   ]
 }

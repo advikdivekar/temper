@@ -237,14 +237,18 @@ def reference(
     session: Session = Depends(get_session),
 ):
     factors = session.scalars(select(EmissionFactorRow).order_by(EmissionFactorRow.name)).all()
-    defaults = session.scalars(select(DefaultValueRow).order_by(DefaultValueRow.cn_code)).all()
+    defaults = session.scalars(
+        select(DefaultValueRow).where(DefaultValueRow.country == "IN")
+        .order_by(DefaultValueRow.cn_code)
+    ).all()
     return {
         "factors": [{"id": f.id, "name": f.name, "value": str(f.value), "per_unit": f.per_unit,
-                     "source": f.source, "version": f.version} for f in factors],
+                     "source": f.source, "version": f.version, "status": f.status} for f in factors],
         "defaults": [
             {"id": d.id, "cn_code": d.cn_code, "country": d.country,
              "base": str(d.base_tco2_per_tonne), "source": d.source,
-             "version": d.version,
+             "version": d.version, "status": d.status, "description": d.description,
+             "route": d.route,
              "marked_up": {
                  str(year): str((d.base_tco2_per_tonne * (1 + rate)).quantize(Decimal("0.01")))
                  for year, rate in MARKUPS.items()

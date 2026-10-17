@@ -61,6 +61,15 @@ export interface Lot {
   intensity: string;
   basis: "actual" | "default";
   tco2: string;
+  used_for?: string | null;
+}
+
+export interface ProductBreakdown {
+  tonnes: string;
+  cn_code: string;
+  direct: string;
+  precursor: string;
+  total: string;
 }
 
 export interface Breakdown {
@@ -68,6 +77,7 @@ export interface Breakdown {
   indirect: string;
   precursor: string;
   lots: Lot[];
+  products?: Record<string, ProductBreakdown>;
 }
 
 export interface ChainNode {
@@ -234,8 +244,8 @@ export interface EvidenceRow {
 }
 
 export interface ReferenceData {
-  factors: { id: number; name: string; value: string; per_unit: string; source: string; version: string }[];
-  defaults: { id: number; cn_code: string; country: string; base: string; source: string; version: string; marked_up: Record<string, string> }[];
+  factors: { id: number; name: string; value: string; per_unit: string; source: string; version: string; status: string }[];
+  defaults: { id: number; cn_code: string; country: string; base: string; source: string; version: string; status: string; description: string; route: string; marked_up: Record<string, string> }[];
   methodologies: { key: string; includes_indirect: boolean; see_decimals: number; markup: Record<string, string> }[];
 }
 

@@ -7,7 +7,7 @@
    accent and always means "the thing that matters" (heat, the
    verified number, the main action). */
 
-.lp {
+.lp, .studio {
   --bg: #08090a; --bg-2: #0e1012; --raised: #12161a;
   --text: #f1f0ee; --text-2: #a3a39f; --text-3: #6f6f6b;
   --rule: rgba(255, 255, 255, 0.12);
@@ -171,7 +171,7 @@
 
 /* Footer */
 .site-footer { background: var(--bg); border-top: 1px solid var(--rule); padding: 56px var(--gutter) 0; overflow: hidden; }
-.foot-grid { display: grid; grid-template-columns: 1fr 1.4fr 1.4fr; gap: 32px; }
+.foot-grid { display: grid; grid-template-columns: 1fr 1.6fr; gap: 32px; }
 .foot-col { font-size: 11px; color: var(--text-3); line-height: 1.8; }
 .foot-col span { color: var(--text-2); letter-spacing: 0.14em; }
 .foot-col p { margin-top: 8px; max-width: 360px; }
@@ -233,7 +233,7 @@
 .pill-cta:disabled { opacity: 0.6; cursor: wait; }
 .hero-link { color: rgba(255, 255, 255, 0.9); border-bottom: 1px solid rgba(255, 255, 255, 0.4); padding-bottom: 2px; font-size: 14px; }
 .hero-link:hover { border-color: #fff; }
-.chart-overlay { position: absolute; left: 0; width: 70%; top: 57%; height: 17%; min-height: 120px; z-index: 2; }
+.chart-overlay { position: absolute; left: 0; right: 0; top: 57%; height: 17%; min-height: 120px; z-index: 2; }
 .chart-line { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .chart-point { position: absolute; width: 0; height: 0; }
 .chart-dot { position: absolute; left: -6px; top: -6px; width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.25); }

@@ -35,6 +35,7 @@ UNITS = {
     "kwh": ("energy", Decimal("1")),
     "mwh": ("energy", Decimal("1000")),
     "gj": ("energy", Decimal("277.77777777777777777777777778")),
+    "tj": ("energy", Decimal("277777.77777777777777777777778")),
     "tco2": ("emissions", Decimal("1")),
     "kgco2": ("emissions", Decimal("0.001")),
 }

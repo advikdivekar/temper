@@ -52,6 +52,7 @@ class ProductOutput:
 
     name: str
     tonnes_made: Decimal
+    cn_code: str = ""
 
 
 @dataclass(frozen=True)
@@ -75,7 +76,7 @@ class StatementResult:
     see_by_product: dict[str, Decimal]
     trace: list[str]
     # Plain numbers for screens: direct, indirect, precursor totals,
-    # plus one entry per precursor lot.
+    # plus one entry per precursor lot and one per product.
     breakdown: dict
 
 
@@ -90,47 +91,80 @@ def calculate_statement(
 ) -> StatementResult:
     trace = [f"Methodology {methodology.name} v{methodology.version}"]
 
+    def six(value: Decimal) -> str:
+        return str(value.quantize(Decimal("0.000001")))
+
     direct = total_direct_emissions(plant.fuels)
-    trace.append(f"Direct emissions: {direct.value} tCO2")
+    trace.append(f"Direct emissions: {six(direct.value)} tCO2")
 
     if methodology.includes_indirect:
         indirect = indirect_emissions(plant.electricity, plant.grid_factor)
-        trace.append(f"Indirect emissions: {indirect.value} tCO2")
+        trace.append(f"Indirect emissions: {six(indirect.value)} tCO2")
     else:
         indirect = Quantity(0, "tco2")
         trace.append("Indirect emissions: not counted for these goods")
 
-    carried, lots = precursor_emissions(
-        plant.precursors, plant.year, methodology
-    )
+    _, lots = precursor_emissions(plant.precursors, plant.year, methodology)
     trace.extend(lot.line for lot in lots)
-    trace.append(f"Precursor emissions: {carried.value} tCO2")
 
-    total = direct + indirect + carried
-    # Round to six places so allocation can split it exactly.
-    total = Quantity(total.value.quantize(Decimal("0.000001")), "tco2")
-    trace.append(f"Plant total: {total.value} tCO2")
+    # Attributed emissions of the installation itself. If they come out
+    # negative they are set to zero (Guidance No. 3, section 4.3.1).
+    own = direct + indirect
+    own_value = own.value
+    if own_value < 0:
+        trace.append("Attributed direct emissions are negative: set to zero")
+        own_value = Decimal("0")
+    own_value = own_value.quantize(Decimal("0.000001"))
 
+    names = [p.name for p in plant.products]
     weights = {p.name: p.tonnes_made for p in plant.products}
-    shares = allocate(total.value, weights)
 
-    see_by_product = {}
+    # The installation's own emissions are split pro rata by tonnes of
+    # product. Precursors given for one product stay with that product.
+    # Shared precursors are split pro rata by tonnes as well.
+    own_share = allocate(own_value, weights)
+    shared_total = sum(
+        (lot.emissions.value for lot in lots if lot.used_for is None),
+        Decimal("0"),
+    ).quantize(Decimal("0.000001"))
+    shared_share = allocate(shared_total, weights)
+
+    for lot in lots:
+        if lot.used_for is not None and lot.used_for not in names:
+            raise ValueError(f"Precursor is for unknown product {lot.used_for}")
+
+    see_by_product, by_product = {}, {}
+    plant_total = Decimal("0")
     for product in plant.products:
-        share = shares[product.name]
-        see = round_see(share / product.tonnes_made, methodology.see_decimals)
+        specific = sum(
+            (lot.emissions.value for lot in lots if lot.used_for == product.name),
+            Decimal("0"),
+        )
+        total_i = (
+            own_share[product.name] + shared_share[product.name] + specific
+        ).quantize(Decimal("0.000001"))
+        see = round_see(total_i / product.tonnes_made, methodology.see_decimals)
         see_by_product[product.name] = see
+        by_product[product.name] = {
+            "tonnes": str(product.tonnes_made),
+            "cn_code": product.cn_code,
+            "direct": str(own_share[product.name]),
+            "precursor": str((shared_share[product.name] + specific).quantize(Decimal("0.000001"))),
+            "total": str(total_i),
+        }
+        plant_total += total_i
         trace.append(
-            f"{product.name}: share {share} tCO2 over "
+            f"{product.name}: {total_i} tCO2 over "
             f"{product.tonnes_made} t gives {see} tCO2 per tonne"
         )
 
-    def six(value: Decimal) -> str:
-        return str(value.quantize(Decimal("0.000001")))
+    carried = sum((lot.emissions.value for lot in lots), Decimal("0"))
+    trace.insert(len(trace) - len(plant.products), f"Plant total: {plant_total.quantize(Decimal('0.000001'))} tCO2")
 
     breakdown = {
-        "direct": six(direct.value),
+        "direct": six(own_value if not methodology.includes_indirect else direct.value),
         "indirect": six(indirect.value),
-        "precursor": six(carried.value),
+        "precursor": six(carried),
         "lots": [
             {
                 "material": lot.material,
@@ -138,13 +172,15 @@ def calculate_statement(
                 "intensity": str(lot.intensity),
                 "basis": lot.basis,
                 "tco2": six(lot.emissions.value),
+                "used_for": lot.used_for,
             }
             for lot in lots
         ],
+        "products": by_product,
     }
     return StatementResult(
         methodology=f"{methodology.name}:{methodology.version}",
-        total_tco2=total.value,
+        total_tco2=plant_total.quantize(Decimal("0.000001")),
         see_by_product=see_by_product,
         trace=trace,
         breakdown=breakdown,

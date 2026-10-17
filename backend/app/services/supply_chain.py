@@ -127,6 +127,7 @@ def recompute_inputs(session: Session, statement: Statement) -> list[dict]:
             "material_name": ref.material_name,
             "tonnes": str(ref.tonnes_used),
             "cn_code": default_row.cn_code,
+            "for_product": ref.used_for,
         }
         if ref.upstream_statement_id:
             newest = latest_version(session, ref.upstream_statement_id)

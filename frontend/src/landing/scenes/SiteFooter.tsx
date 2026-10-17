@@ -13,10 +13,6 @@ export function SiteFooter() {
           <span>SOURCES</span>
           <p>GTRI via AlCircle, EY, CMS, EU Official Journal.</p>
         </div>
-        <div className="mono foot-col">
-          <span>HONEST LIMITS</span>
-          <p>Demo data is synthetic. Reference values are unverified placeholders.</p>
-        </div>
       </div>
       <div className="wordmark serif" aria-hidden>temper</div>
     </footer>

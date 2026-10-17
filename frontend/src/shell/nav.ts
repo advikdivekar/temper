@@ -47,3 +47,23 @@ export function navFor(role: Role): NavGroup[] {
     network, trust,
   ];
 }
+
+
+/** The studio's floating bar: a few primary pages, the rest in a menu. */
+export function studioNav(role: Role): { primary: NavItem[]; more: NavItem[] } {
+  const home = { to: "/overview", label: "Home", icon: "flame" };
+  const statements = { to: "/statements", label: "Statements", icon: "shield" };
+  const network = { to: "/network", label: "Chain", icon: "link" };
+  const requests = { to: "/requests", label: "Requests", icon: "ship" };
+  const audit = { to: "/audit", label: "Audit chain", icon: "lock" };
+  const library = { to: "/reference", label: "Library", icon: "file" };
+  const identity = { to: "/settings", label: "Organization", icon: "shield" };
+  if (role === "supplier") {
+    return {
+      primary: [home, { to: "/plant", label: "Build", icon: "factory" }, statements,
+        { to: "/ledger", label: "Ledger", icon: "refresh" }, { to: "/evidence", label: "Vault", icon: "upload" }, network],
+      more: [requests, audit, library, identity],
+    };
+  }
+  return { primary: [home, statements, network, requests], more: [audit, library, identity] };
+}

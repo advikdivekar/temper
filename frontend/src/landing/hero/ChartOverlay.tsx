@@ -16,13 +16,13 @@ import { motion } from "motion/react";
 
 // x and y are percentages of the box.
 const POINTS = [
-  { x: 25, y: 42, label: "default applied", value: "4.95 tCO2/t" },
-  { x: 55, y: 66, label: "60% of steel verified", value: "3.56 tCO2/t" },
-  { x: 82, y: 80, label: "chain linked", value: "2.64 tCO2/t" },
+  { x: 20, y: 40, label: "default applied", value: "4.95 tCO2/t" },
+  { x: 50, y: 64, label: "60% of steel verified", value: "3.56 tCO2/t" },
+  { x: 80, y: 80, label: "chain linked", value: "2.64 tCO2/t" },
 ];
 
 // The same curve in a 100 by 100 box.
-const LINE = "M 0 30 C 8 29, 17 42, 25 42 S 44 66, 55 66 S 70 80, 82 80 S 96 83, 100 78";
+const LINE = "M 0 26 C 6 25, 14 40, 20 40 S 42 64, 50 64 S 70 80, 80 80 S 96 84, 100 80";
 
 export function ChartOverlay() {
   return (

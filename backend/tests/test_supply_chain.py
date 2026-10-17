@@ -67,7 +67,7 @@ def test_chain_stale_and_recompute(world):
     mill_stmt = build_statement(
         session, mill, START, END, [], METHOD, 1
     )
-    assert mill_stmt.see_by_product["steel_coil"] == "2.40000"
+    assert mill_stmt.see_by_product["steel_coil"] == "2.44068"
     publish(session, keys, mill_org, verifier, mill_stmt)
 
     add(session, fab, "fuel", "coal", "10", "tonne", ev)
@@ -76,10 +76,10 @@ def test_chain_stale_and_recompute(world):
              "upstream_statement_id": mill_stmt.id,
              "upstream_product": "steel_coil"}]
     fab_stmt = build_statement(session, fab, START, END, link, METHOD, 1)
-    # 10 t coal x 2.4 = 24, steel 100 t x 2.4 actual = 240, over 100 t.
-    assert fab_stmt.see_by_product["bolts"] == "2.64000"
-    # On defaults it would be (24 + 100 x 4.28 x 1.10) / 100.
-    assert default_see(session, fab_stmt)["bolts"] == "4.94800"
+    # 10 t coal x 2.44068 = 24.4068, steel 100 t x 2.44068 actual, over 100 t.
+    assert fab_stmt.see_by_product["bolts"] == "2.68475"
+    # On defaults it would be (24.4068 + 100 x 4.28 x 1.10) / 100.
+    assert default_see(session, fab_stmt)["bolts"] == "4.95207"
 
     # Mill corrects its coal use and builds a new version.
     first_coal = [
@@ -96,7 +96,7 @@ def test_chain_stale_and_recompute(world):
     publish(session, keys, mill_org, verifier, new_mill)
     rebuilt = recompute_stale(session, 1)
     assert len(rebuilt) == 1
-    assert rebuilt[0].see_by_product["bolts"] == "1.44000"
+    assert rebuilt[0].see_by_product["bolts"] == "1.46441"
 
 
 def test_cycle_is_refused(world):

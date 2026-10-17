@@ -20,7 +20,11 @@ const BOX_H = 76;
 
 interface Placed { key: string; id: number | null; x: number; y: number; label: string; value: string; verified: boolean; ghost: boolean }
 
-export function ChainGraph({ chain }: { chain: Chain }) {
+export function ChainGraph({ chain, dark = false }: { chain: Chain; dark?: boolean }) {
+  const ink = dark ? "#f1f0ee" : "#0e0e10";
+  const soft = dark ? "#a3a39f" : "#6b6a66";
+  const box = dark ? "#0e1114" : "#ffffff";
+  const ghost = dark ? "#14181c" : "#f3f0ea";
   const navigate = useNavigate();
 
   const layout = useMemo(() => {
@@ -73,7 +77,7 @@ export function ChainGraph({ chain }: { chain: Chain }) {
       <svg width={layout.width} height={layout.height} role="img" aria-label="Supply chain behind this statement">
         {links.map((link, i) => (
           <g key={i}>
-            <motion.path d={link.path} fill="none" stroke={link.ghost ? "#a5a39d" : "#16202c"}
+            <motion.path d={link.path} fill="none" stroke={link.ghost ? "#6f6f6b" : dark ? "#d8d8d4" : "#16202c"}
               strokeWidth="2" strokeDasharray={link.ghost ? "5 6" : "0"}
               initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
               transition={{ duration: 1, delay: 0.3 + i * 0.2 }} />
@@ -90,11 +94,11 @@ export function ChainGraph({ chain }: { chain: Chain }) {
             style={{ cursor: node.id ? "pointer" : "default" }}
             onClick={() => node.id && navigate(`/statements/${node.id}`)}>
             <rect x={node.x} y={node.y} width={BOX_W} height={BOX_H} rx="2"
-              fill={node.ghost ? "#f3f0ea" : "#fff"} stroke={node.verified ? "#0f9d6b" : "#0e0e10"}
+              fill={node.ghost ? ghost : box} stroke={node.verified ? "#0f9d6b" : ink}
               strokeOpacity={node.verified ? 1 : 0.15} strokeWidth={node.verified ? 2 : 1}
               strokeDasharray={node.ghost ? "5 5" : "0"} />
-            <text x={node.x + 16} y={node.y + 28} fontSize="13" fontWeight="600" fontFamily="Inter" fill="#0e0e10">{node.label}</text>
-            <text x={node.x + 16} y={node.y + 54} fontSize="14" fontFamily="JetBrains Mono" fill="#6b6a66">{node.value}</text>
+            <text x={node.x + 16} y={node.y + 28} fontSize="13" fontWeight="600" fontFamily="Inter" fill={ink}>{node.label}</text>
+            <text x={node.x + 16} y={node.y + 54} fontSize="14" fontFamily="JetBrains Mono" fill={soft}>{node.value}</text>
             {node.verified && <circle cx={node.x + BOX_W - 18} cy={node.y + 20} r="8" fill="#0f9d6b" />}
             {node.verified && <path d={`M ${node.x + BOX_W - 22} ${node.y + 20} l3 3 5 -6`} stroke="#fff" strokeWidth="2" fill="none" strokeLinecap="round" />}
           </motion.g>

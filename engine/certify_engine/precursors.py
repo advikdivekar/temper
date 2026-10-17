@@ -34,6 +34,11 @@ class PrecursorLot:
     actual_tco2_per_tonne: Decimal | None = None
     verified: bool = False
     source: str = ""  # supplier statement id when actual data is given
+    # The product this precursor went into. When None the precursor is
+    # shared across all products and split pro rata by tonnes. Guidance
+    # example: carbon steel rods go only into carbon steel screws, and
+    # stainless rods only into stainless screws.
+    used_for: str | None = None
 
 
 @dataclass(frozen=True)
@@ -44,6 +49,7 @@ class LotResult:
     line: str  # one trace line
     material: str = ""
     tonnes: Decimal = Decimal("0")
+    used_for: str | None = None
 
 
 def resolve_lot(
@@ -61,11 +67,13 @@ def resolve_lot(
     tonnes = lot.tonnes_used.to("tonne")
     emissions = Quantity(tonnes.value * intensity, "tco2")
     line = (
-        f"Precursor {lot.material_name}: {tonnes.value} t at "
-        f"{intensity} tCO2 per tonne ({basis}) = {emissions.value} tCO2"
+        f"Precursor {lot.material_name}: {tonnes.value.quantize(Decimal('0.001'))} t at "
+        f"{intensity.quantize(Decimal('0.00001'))} tCO2 per tonne ({basis}) = "
+        f"{emissions.value.quantize(Decimal('0.000001'))} tCO2"
     )
     return LotResult(
-        emissions, intensity, basis, line, lot.material_name, tonnes.value
+        emissions, intensity, basis, line, lot.material_name, tonnes.value,
+        lot.used_for,
     )
 
 

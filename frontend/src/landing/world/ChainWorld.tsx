@@ -28,6 +28,7 @@ export interface WorldState {
   importer: MotionValue<number>;
   roadA: MotionValue<number>;      // mill to bolt works
   roadB: MotionValue<number>;      // bolt works to importer
+  millNumber: MotionValue<number>;  // the mill's carbon number
   boltsNumber: MotionValue<number>; // the bolt works' carbon number
   saving: MotionValue<number>;      // importer saving, in percent
 }
@@ -143,7 +144,7 @@ export function ChainWorld({ state, focus }: { state: WorldState; focus: NodeKey
 
       {/* Labels sit on a top layer so no building can hide them. */}
       <Label gx={1.85} gy={1.85} gz={3.5} title="VERIFIER" value="signs opinions" />
-      <Label gx={2.3} gy={6.0} gz={1.6} title="STEEL MILL" value="2.40" unit="tCO2/t" />
+      <Label gx={2.3} gy={6.0} gz={1.6} title="STEEL MILL" source={state.millNumber} format={(v) => v.toFixed(2)} unit="tCO2/t" />
       <Label gx={8.1} gy={1.5} gz={4.7} title="EU IMPORTER" source={state.saving} format={(v) => (v < 1 ? "pays default" : `saves ${Math.round(v)}%`)} />
       <Label gx={5.7} gy={4.8} gz={1.6} title="BOLT WORKS" source={state.boltsNumber} format={(v) => v.toFixed(2)} unit="tCO2/t" accent />
 

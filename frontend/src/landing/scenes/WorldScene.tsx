@@ -20,7 +20,7 @@
 // Fallbacks: Space or Enter held works like a pointer hold, and
 // "Show the result" jumps straight to the end.
 
-import { motion, useMotionValueEvent, useTransform } from "motion/react";
+import { motion, useMotionValue, useMotionValueEvent, useTransform } from "motion/react";
 import type { MotionValue } from "motion/react";
 import { useState } from "react";
 import { Reveal } from "../../ui/Reveal";
@@ -64,6 +64,7 @@ export function WorldScene() {
     verifier: useDerived(p, (v) => between(v, 0.2, 0.34)),
     roadA: useDerived(p, (v) => between(v, 0.45, 0.58)),
     bolts: useDerived(p, (v) => between(v, 0.45, 0.62)),
+    millNumber: useMotionValue(2.4),
     boltsNumber: useDerived(p, (v) => 4.95 - (4.95 - 2.64) * between(v, 0.48, 0.66)),
     roadB: useDerived(p, (v) => between(v, 0.72, 0.82)),
     importer: useDerived(p, (v) => between(v, 0.72, 0.86)),

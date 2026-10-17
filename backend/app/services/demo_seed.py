@@ -28,7 +28,7 @@ from sqlalchemy.orm import Session
 
 from app.evidence import save_evidence
 from app.ledger import add_record, correct_record, records_as_of
-from app.models import DataRequest, Installation, Organization
+from app.models import DataRequest, Good, Installation, Organization
 from app.services import trust
 from app.services.audit import append_audit
 from app.services.reference_data import load_reference_data
@@ -129,9 +129,18 @@ def seed_demo(session: Session, settings, ensure_user) -> dict:
     session.add_all([jamshedpur, pune, coimbatore])
     session.commit()
 
+    # The customs (CN) code of each product, so the EU default for the
+    # finished good can be looked up. Codes from the Commission's table.
+    session.add_all([
+        Good(installation_id=jamshedpur.id, name="steel_rods", cn_code="7213"),
+        Good(installation_id=pune.id, name="bolts", cn_code="73181590"),
+        Good(installation_id=coimbatore.id, name="nuts", cn_code="73181600"),
+    ])
+    session.commit()
+
     # Four quarters of confirmed records for each plant.
     for i, quarter in enumerate(QUARTERS):
-        _record_quarter(session, settings, mill, jamshedpur, quarter, "steel_coil", MILL[i])
+        _record_quarter(session, settings, mill, jamshedpur, quarter, "steel_rods", MILL[i])
         _record_quarter(session, settings, bolts, pune, quarter, "bolts", BOLTS[i])
         _record_quarter(session, settings, bolts, coimbatore, quarter, "nuts", NUTS[i])
 
@@ -147,9 +156,10 @@ def seed_demo(session: Session, settings, ensure_user) -> dict:
     # Bolt works: link to the mill's quarter. Q4 falls back to default.
     bolts_statements = []
     for i, (start, end) in enumerate(QUARTERS):
-        link = [{"material_name": "steel", "tonnes": str(STEEL_BOUGHT[i]),
-                 "cn_code": "7208", "upstream_statement_id": mill_statements[i].id,
-                 "upstream_product": "steel_coil"}]
+        link = [{"material_name": "steel rods", "tonnes": str(STEEL_BOUGHT[i]),
+                 "cn_code": "7213", "for_product": "bolts",
+                 "upstream_statement_id": mill_statements[i].id,
+                 "upstream_product": "steel_rods"}]
         statement = build_statement(session, pune, start, end, link, METHOD, bolts_user.id)
         _publish(session, settings, bolts, statement, bolts_user.id,
                  [verifier, importer], verifier, verify=i < 2)
@@ -160,8 +170,8 @@ def seed_demo(session: Session, settings, ensure_user) -> dict:
         start, end = QUARTERS[i]
         statement = build_statement(
             session, coimbatore, start, end,
-            [{"material_name": "steel", "tonnes": str(int(NUTS[i][0] * 1.05)),
-              "cn_code": "7208"}], METHOD, bolts_user.id)
+            [{"material_name": "steel rods", "tonnes": str(int(NUTS[i][0] * 1.05)),
+              "cn_code": "7213", "for_product": "nuts"}], METHOD, bolts_user.id)
         _publish(session, settings, bolts, statement, bolts_user.id,
                  [verifier, importer], verifier, verify=False)
 

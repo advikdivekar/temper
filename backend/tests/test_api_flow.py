@@ -61,8 +61,8 @@ def test_full_flow(tmp_path):
                         "cn_code": "7208"}]})
     assert built.status_code == 200, built.text
     statement = built.json()
-    # 24 direct + 100 t x 4.28 x 1.10 = 494.8 over 100 t
-    assert statement["see_by_product"]["bolts"] == "4.94800"
+    # 24.4068 direct + 100 t x 4.28 x 1.10 = 495.2068 over 100 t
+    assert statement["see_by_product"]["bolts"] == "4.95207"
     sid = statement["id"]
 
     assert client.post(f"/statements/{sid}/sign",
@@ -148,7 +148,7 @@ def test_incoming_chain_and_breakdown(tmp_path):
             "period_end": "2026-12-31", "precursors": precursors}).json()
 
     mill_stmt = make(mill, "100", "steel_coil", "100", [])
-    assert mill_stmt["breakdown"]["direct"] == "240.000000"
+    assert mill_stmt["breakdown"]["direct"] == "244.068000"
     client.post(f"/statements/{mill_stmt['id']}/sign", headers=mill)
     client.post(f"/statements/{mill_stmt['id']}/share", headers=mill,
                 json={"recipient_org_id": verifier_id})

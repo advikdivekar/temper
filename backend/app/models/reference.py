@@ -26,16 +26,20 @@ class EmissionFactorRow(Base):
     name: Mapped[str] = mapped_column(String(100))
     value: Mapped[Decimal] = mapped_column(Numeric(20, 8))
     per_unit: Mapped[str] = mapped_column(String(20))
-    source: Mapped[str] = mapped_column(String(300))
+    source: Mapped[str] = mapped_column(String(600))
     version: Mapped[str] = mapped_column(String(50))
+    status: Mapped[str] = mapped_column(String(30), default="unverified")
 
 
 class DefaultValueRow(Base):
     __tablename__ = "default_value"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    cn_code: Mapped[str] = mapped_column(String(10))
+    cn_code: Mapped[str] = mapped_column(String(12))
     country: Mapped[str] = mapped_column(String(10))
     base_tco2_per_tonne: Mapped[Decimal] = mapped_column(Numeric(20, 8))
-    source: Mapped[str] = mapped_column(String(300))
+    source: Mapped[str] = mapped_column(String(600))
     version: Mapped[str] = mapped_column(String(50))
+    description: Mapped[str] = mapped_column(String(200), default="")
+    status: Mapped[str] = mapped_column(String(30), default="unverified")
+    route: Mapped[str] = mapped_column(String(20), default="")

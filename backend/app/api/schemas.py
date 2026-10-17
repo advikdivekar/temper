@@ -46,6 +46,7 @@ class RecordRequest(BaseModel):
     valid_from: date
     valid_to: date
     evidence_id: int
+    cn_code: str | None = None
 
 
 class CorrectionRequest(BaseModel):
@@ -59,6 +60,7 @@ class PrecursorInput(BaseModel):
     cn_code: str
     upstream_statement_id: int | None = None
     upstream_product: str | None = None
+    for_product: str | None = None
 
 
 class BuildStatementRequest(BaseModel):

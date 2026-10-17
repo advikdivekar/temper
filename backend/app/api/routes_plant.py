@@ -142,6 +142,19 @@ def create_record(
     session: Session = Depends(get_session),
 ):
     own_installation(session, caller, body.installation_id)
+    if body.kind == "output" and body.cn_code:
+        # Remember the customs code of each product, so the EU default
+        # for that product can be looked up later.
+        good = session.scalar(
+            select(Good).where(Good.installation_id == body.installation_id,
+                               Good.name == body.name)
+        )
+        if good is None:
+            session.add(Good(installation_id=body.installation_id,
+                             name=body.name, cn_code=body.cn_code.replace(" ", "")))
+        else:
+            good.cn_code = body.cn_code.replace(" ", "")
+        session.commit()
     record = add_record(
         session, body.kind, body.name, body.amount, body.unit,
         body.valid_from, body.valid_to, body.evidence_id,

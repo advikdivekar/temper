@@ -37,21 +37,34 @@ human confirms. No emissions number ever comes from a language model.
 
 ## What is in the product
 
-| Area | Pages and features |
+The signed in product is a set of full screen "stages", not a dashboard:
+
+| Page | What it is |
 |---|---|
-| Public | Landing page (nine scenes), interactive architecture page, public pack verifier |
-| Everyone | Overview dashboard, supply chain network, requests inbox, audit log, reference data, organization and signing key, command palette (Cmd+K), notifications |
-| Supplier | Guided plant workspace, ledger with time travel, evidence vault with re-verification, statements with evidence trail and versions |
-| Verifier | Review queue, review desk, signed opinions |
-| Importer | Supplier portfolio, savings simulator |
+| Home | Your chain as a small isometric world, and the one number that matters for your role |
+| Build | A guided five step flow: plant, proof, data, inputs, run |
+| Statements | A swim lane timeline: each plant a lane, each quarter a node whose ring shows its state |
+| A statement | A scroll story with a spine, a floating action dock, and "hold to sign" |
+| Ledger | Time travel: drag back to see what your records said on any date |
+| Vault | A wall of fingerprints; hover to re-verify a document |
+| Chain | The supply chain as a glowing graph |
+| Requests | Ask suppliers or answer customers |
+| Audit chain | The hash chained log, with a one tap integrity check |
+| Library | EU default values by CN code, and emission factors with their status |
+| Public | Landing page, one scroll linked architecture flow, a pack verifier anyone can use |
 
-The demo workspace is seeded automatically the first time you enter as a
-persona: four quarters of data across four organizations, signed and verified
-statements, a mid flight upstream revision (so one statement is stale and needs
-recomputing), and open requests. Everything is synthetic.
+The demo workspace is seeded the first time you enter as a persona: four
+quarters across four organizations, signed and verified statements, a mid
+flight upstream revision (one statement is stale), and open requests. All of
+it is synthetic.
 
-Brand: `frontend/src/brand/` holds the wordmark (a folded ribbon M) and mark,
-generated as vector outlines. SVG copies are in `frontend/public/brand/`.
+## Where the numbers come from
+
+See `docs/sources.md`. Default values come from the Commission's Excel for
+IR (EU) 2026/1740 (India and other countries, iron, steel and aluminium). The
+engine reproduces the Commission's own worked examples (Guidance No. 5d
+Example 3, Guidance No. 3 section 4.3.3) as golden tests. Natural gas is
+confirmed; the other fuel factors are flagged unverified in the UI.
 
 ## Run it
 
@@ -74,8 +87,8 @@ Tests:
     cd engine && .venv/bin/pytest -q
     cd backend && PYTHONPATH=. .venv/bin/pytest -q
 
-## Reference data warning
+## Honest limits
 
-`data/default_values.json` and `data/emission_factors.json` hold
-placeholder or unverified numbers. Replace them from the official
-Commission publications before trusting any output.
+Coal, diesel and grid factors are unverified, aluminium mark-ups are assumed
+equal to steel, and savings ignore the free allocation adjustment. The raw
+regulation files are kept out of git (see .gitignore).

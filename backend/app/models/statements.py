@@ -72,3 +72,4 @@ class PrecursorRef(Base):
     default_value_id: Mapped[int | None] = mapped_column(
         ForeignKey("default_value.id"), default=None
     )
+    used_for: Mapped[str | None] = mapped_column(String(100), default=None)

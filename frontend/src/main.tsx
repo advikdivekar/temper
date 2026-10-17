@@ -18,6 +18,7 @@ import "./styles/ui.css";
 import "./styles/landing.css";
 import "./styles/app.css";
 import "./styles/architecture.css";
+import "./styles/studio.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

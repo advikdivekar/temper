@@ -39,7 +39,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.ledger import records_as_of
-from app.models.plant import Installation
+from app.models.plant import Good, Installation
 from app.models.statements import PrecursorRef, Statement
 from app.models.trust import VerificationOpinion
 from app.services.audit import append_audit
@@ -126,7 +126,12 @@ def prepare(
         session, installation.id, period_start, period_end
     )
 
-    fuels, products, electricity = [], [], Quantity(0, "kwh")
+    goods = {
+        g.name: g.cn_code for g in session.scalars(
+            select(Good).where(Good.installation_id == installation.id)
+        )
+    }
+    fuels, outputs, electricity = [], {}, Quantity(0, "kwh")
     factor_rows = {}
     for rec in records:
         if rec.kind == "fuel":
@@ -139,9 +144,13 @@ def prepare(
         elif rec.kind == "electricity":
             electricity = electricity + Quantity(rec.amount, rec.unit)
         elif rec.kind == "output":
-            products.append(ProductOutput(rec.name, Decimal(rec.amount)))
-    if not products:
+            outputs[rec.name] = outputs.get(rec.name, Decimal("0")) + Decimal(rec.amount)
+    if not outputs:
         raise ValueError("No product output records in this period")
+    products = [
+        ProductOutput(name, tonnes, goods.get(name, ""))
+        for name, tonnes in outputs.items()
+    ]
 
     grid_row = latest_factor(session, "grid_india")
     factor_rows["grid_india"] = grid_row.id
@@ -169,11 +178,14 @@ def prepare(
                 actual = Decimal(upstream.see_by_product[product])
                 verified = True
                 source = f"statement {upstream.id}"
+        used_for = item.get("for_product") or None
+        if used_for and used_for not in outputs:
+            raise ValueError(f"Precursor is for {used_for}, which is not an output")
         lots.append(
             PrecursorLot(
                 item["material_name"],
                 Quantity(item["tonnes"], "tonne"),
-                default, actual, verified, source,
+                default, actual, verified, source, used_for,
             )
         )
         ref_hashes.append(
@@ -183,6 +195,7 @@ def prepare(
                 "upstream": upstream_id if verified else None,
                 "upstream_hash": upstream.content_hash if verified else None,
                 "default_id": default_row.id,
+                "used_for": used_for,
             }
         )
         refs.append((item, default_row.id, upstream_id if verified else None,
@@ -201,7 +214,15 @@ def prepare(
 
 
 def default_see(session: Session, statement: Statement) -> dict:
-    """SEE per product if every precursor had used the default value."""
+    """What the EU default would give per product.
+
+    An importer who has no verified data for a finished good uses the
+    Commission's default for that good's own CN code (for example
+    7318 15 for threaded screws and bolts), marked up for the year.
+    That is the number we compare against. If a product has no CN code
+    on record we fall back to rebuilding the statement with every
+    precursor at its default.
+    """
     installation = session.get(Installation, statement.installation_id)
     inputs = recompute_inputs(session, statement)
     prepared = prepare(
@@ -210,7 +231,20 @@ def default_see(session: Session, statement: Statement) -> dict:
         force_defaults=True,
     )
     result = calculate_statement(prepared.plant, prepared.methodology)
-    return {k: str(v) for k, v in result.see_by_product.items()}
+    out = {k: str(v) for k, v in result.see_by_product.items()}
+
+    methodology = METHODOLOGIES[statement.methodology]
+    markup = Decimal("1") + methodology.markup_for(statement.period_end.year)
+    for product in prepared.plant.products:
+        if not product.cn_code:
+            continue
+        try:
+            row = latest_default(session, product.cn_code, installation.country)
+        except LookupError:
+            continue
+        value = (Decimal(row.base_tco2_per_tonne) * markup).quantize(Decimal("0.00001"))
+        out[product.name] = str(value)
+    return out
 
 
 def build_statement(
@@ -281,6 +315,7 @@ def build_statement(
                 upstream_product=item.get("upstream_product"),
                 upstream_hash=upstream_hash,
                 default_value_id=default_id,
+                used_for=item.get("for_product") or None,
             )
         )
     session.commit()

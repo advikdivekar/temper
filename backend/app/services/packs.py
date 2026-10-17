@@ -54,6 +54,7 @@ def build_pack(session: Session, statement: Statement, full: bool) -> dict:
             "upstream": r.upstream_statement_id,
             "upstream_hash": r.upstream_hash,
             "default_id": r.default_value_id,
+            "used_for": r.used_for,
         }
         for r in refs
     ]

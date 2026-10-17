@@ -101,3 +101,33 @@ def test_requests_flow(tmp_path):
     assert incoming
     done = client.post(f"/requests/{incoming[0]['id']}/resolve", headers=mill).json()
     assert done["status"] == "resolved"
+
+
+def test_default_for_a_fastener_uses_its_own_cn_code(tmp_path):
+    """The importer's default is the Commission's value for the finished
+    good (India, 7318 15 threaded screws and bolts: 5.720), marked up 10
+    percent for 2026. That is 6.292, not a sum built from steel."""
+    client = make_client(tmp_path)
+    client.post("/demo/seed")
+    importer = login(client, "importer")
+    bolts = next(s for s in client.get("/statements", headers=importer).json()
+                 if "bolts" in s["see_by_product"])
+    assert bolts["default_see_by_product"]["bolts"] == "6.29200"
+    nuts_default = next(
+        s for s in client.get("/statements", headers=importer).json()
+        if "nuts" in s["see_by_product"])["default_see_by_product"]["nuts"]
+    assert nuts_default == "5.65400"  # 7318 16 nuts: 5.140 x 1.10
+
+
+def test_reference_lists_the_commission_values_with_status(tmp_path):
+    client = make_client(tmp_path)
+    client.post("/demo/seed")
+    mill = login(client, "mill")
+    ref = client.get("/reference", headers=mill).json()
+    row = next(d for d in ref["defaults"] if d["cn_code"] == "731815")
+    assert row["base"].startswith("5.72") and row["status"] == "commission_file"
+    assert row["marked_up"]["2026"] == "6.29" and row["marked_up"]["2028"] == "7.44"
+    gas = next(f for f in ref["factors"] if f["name"] == "natural_gas")
+    assert gas["status"] == "verified_guidance"
+    coal = next(f for f in ref["factors"] if f["name"] == "coal")
+    assert coal["status"] == "unverified"
