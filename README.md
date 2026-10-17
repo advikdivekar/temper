@@ -37,20 +37,19 @@ human confirms. No emissions number ever comes from a language model.
 
 ## What is in the product
 
-The signed in product is a set of full screen "stages", not a dashboard:
+The signed in product is calm and editorial: warm paper pages, dark ink, thin
+rules, one big thing and one action per page. Four pages in the bar, the rest
+in the avatar menu.
 
 | Page | What it is |
 |---|---|
-| Home | Your chain as a small isometric world, and the one number that matters for your role |
-| Build | A guided five step flow: plant, proof, data, inputs, run |
-| Statements | A swim lane timeline: each plant a lane, each quarter a node whose ring shows its state |
-| A statement | A scroll story with a spine, a floating action dock, and "hold to sign" |
-| Ledger | Time travel: drag back to see what your records said on any date |
-| Vault | A wall of fingerprints; hover to re-verify a document |
-| Chain | The supply chain as a glowing graph |
-| Requests | Ask suppliers or answer customers |
-| Audit chain | The hash chained log, with a one tap integrity check |
-| Library | EU default values by CN code, and emission factors with their status |
+| Home | One big number for your role, one sentence, and what needs you |
+| Statements | Each plant and product with four quarter cells; a dot and a word show the state |
+| A statement | The number, a few buttons (sign, share, review, estimate a saving, download pack), and three sections |
+| Build | Three steps: plant and period, documents and data, steel and run |
+| Chain | The supply chain around you as a simple graph |
+| Records (menu) | Ledger with "as it stood" time travel, evidence with re-verify, audit log with chain check |
+| Requests, Library, Organization (menu) | Data requests, EU default values by CN code, your signing key |
 | Public | Landing page, one scroll linked architecture flow, a pack verifier anyone can use |
 
 The demo workspace is seeded the first time you enter as a persona: four

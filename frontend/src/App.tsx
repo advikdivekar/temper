@@ -12,9 +12,7 @@ import { StudioShell } from "./studio/StudioShell";
 // Each page is loaded only when first visited, so the landing page
 // downloads far less code. Suspense shows nothing while a page loads.
 const ArchitecturePage = lazy(() => import("./architecture/ArchitecturePage").then((m) => ({ default: m.ArchitecturePage })));
-const AuditPage = lazy(() => import("./studio/pages/AuditPage").then((m) => ({ default: m.AuditPage })));
-const EvidencePage = lazy(() => import("./studio/pages/VaultPage").then((m) => ({ default: m.VaultPage })));
-const LedgerPage = lazy(() => import("./studio/pages/LedgerPage").then((m) => ({ default: m.LedgerPage })));
+const RecordsPage = lazy(() => import("./studio/pages/RecordsPage").then((m) => ({ default: m.RecordsPage })));
 const NetworkPage = lazy(() => import("./studio/pages/NetworkPage").then((m) => ({ default: m.NetworkPage })));
 const HomePage = lazy(() => import("./studio/pages/HomePage").then((m) => ({ default: m.HomePage })));
 const PlantPage = lazy(() => import("./studio/pages/BuildPage").then((m) => ({ default: m.BuildPage })));
@@ -40,11 +38,12 @@ export function App() {
         <Route path="/plant" element={<PlantPage />} />
         <Route path="/statements" element={<StatementsPage />} />
         <Route path="/statements/:id" element={<StatementPage />} />
-        <Route path="/ledger" element={<LedgerPage />} />
-        <Route path="/evidence" element={<EvidencePage />} />
+        <Route path="/records" element={<RecordsPage />} />
+        <Route path="/ledger" element={<Navigate to="/records?tab=ledger" />} />
+        <Route path="/evidence" element={<Navigate to="/records?tab=evidence" />} />
         <Route path="/network" element={<NetworkPage />} />
         <Route path="/requests" element={<RequestsPage />} />
-        <Route path="/audit" element={<AuditPage />} />
+        <Route path="/audit" element={<Navigate to="/records?tab=audit" />} />
         <Route path="/reference" element={<ReferencePage />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Route>

@@ -1,21 +1,14 @@
 // studio/pages/RequestsPage.tsx
 // Requests between companies: ask a supplier to share or verify
-// something, and answer what your customers ask of you. This is the
-// supplier invitation loop in the product.
-//
-// Each request is a large line, not a form: who it is with, what they
-// need, and a round button to mark it done. A pill at the bottom opens
-// a sheet to send a new one.
+// something, and answer what your customers ask of you.
 
-import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../api/client";
 import type { Organization, RequestRow } from "../../api/types";
 import { timeAgo } from "../../lib/format";
-import { Icon } from "../../ui/Icons";
 import { useToast } from "../../ui/Toast";
-import { Sheet } from "../parts/Sheet";
+import { Modal } from "../parts/Modal";
 
 type Tab = "incoming" | "outgoing" | "resolved";
 
@@ -42,51 +35,30 @@ export function RequestsPage() {
   }
 
   const list = (rows ?? []).filter((r) => (tab === "resolved" ? r.status === "resolved" : r.status === "open" && r.direction === tab));
-  const count = (d: "incoming" | "outgoing") => (rows ?? []).filter((r) => r.status === "open" && r.direction === d).length;
+  const n = (d: "incoming" | "outgoing") => (rows ?? []).filter((r) => r.status === "open" && r.direction === d).length;
 
   return (
     <div>
-      <div className="stage-head">
-        <span className="kicker mono">REQUESTS</span>
-        <h1 className="stage-title">Ask. Share. Close the gap.</h1>
-        <div className="seg-line">
-          {(["incoming", "outgoing", "resolved"] as Tab[]).map((t) => (
-            <button key={t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}>
-              {t === "outgoing" ? "Sent" : t[0].toUpperCase() + t.slice(1)}{t !== "resolved" && count(t) > 0 && <b>{count(t)}</b>}
-              {tab === t && <motion.i layoutId="req-line" />}
-            </button>
-          ))}
+      <div className="head"><span className="kicker">Requests</span><h1 className="title">Ask. Share. Close the gap.</h1>
+        <div className="actions" style={{ marginTop: 14 }}><button className="btn-solid" onClick={() => setOpen(true)}>New request</button></div></div>
+      <div className="tabs">{(["incoming", "outgoing", "resolved"] as Tab[]).map((t) => (
+        <button key={t} className={`tab ${tab === t ? "on" : ""}`} onClick={() => setTab(t)}>{t === "outgoing" ? "Sent" : t[0].toUpperCase() + t.slice(1)}{t !== "resolved" && n(t) > 0 ? ` (${n(t)})` : ""}{tab === t && <i />}</button>))}</div>
+      {list.map((r) => (
+        <div key={r.id} className="req">
+          <div><span className="kicker">{r.direction === "incoming" ? "From" : "To"} {r.other_role} / {r.kind} / {timeAgo(r.created_at)}</span>
+            <h3>{r.other}</h3><p className="soft">{r.message || "No message."}</p>
+            {r.statement_id && <Link to={`/statements/${r.statement_id}`} className="link-inline">Open statement #{r.statement_id}</Link>}</div>
+          {r.status === "open" && <button className="btn-line" onClick={() => resolve(r.id)}>Mark resolved</button>}
         </div>
-      </div>
+      ))}
+      {rows && list.length === 0 && <p className="row-empty">Nothing here.</p>}
 
-      <div className="req-list">
-        <AnimatePresence mode="popLayout">
-          {list.map((r, i) => (
-            <motion.div layout key={r.id} className="req" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: 40 }} transition={{ delay: i * 0.05 }}>
-              <div className="req-main">
-                <span className="mono kicker">{r.direction === "incoming" ? "FROM" : "TO"} {r.other_role.toUpperCase()} · {r.kind.toUpperCase()} · {timeAgo(r.created_at).toUpperCase()}</span>
-                <strong className="req-who">{r.other}</strong>
-                <p>{r.message || "No message."}</p>
-                {r.statement_id && <Link to={`/statements/${r.statement_id}`} className="link-btn">Open statement #{r.statement_id}</Link>}
-              </div>
-              {r.status === "open" && <button className="req-done" onClick={() => resolve(r.id)} aria-label="Mark resolved"><Icon name="check" size={18} /></button>}
-            </motion.div>
-          ))}
-        </AnimatePresence>
-        {rows && list.length === 0 && <p className="muted-light req-empty">Nothing here.</p>}
-      </div>
-
-      <div className="dock"><button className="dock-btn primary" onClick={() => setOpen(true)}><Icon name="plus" size={15} />New request</button></div>
-      <Sheet open={open} title="NEW REQUEST" onClose={() => setOpen(false)}>
-        <div className="share-list">
-          {orgs.map((o) => (
-            <button key={o.id} className={`source ${to === String(o.id) ? "on" : ""}`} onClick={() => setTo(String(o.id))}><strong>{o.name}</strong><span className="mono">{o.role}</span></button>
-          ))}
-        </div>
-        <div className="seg-line">{["verify", "share", "update"].map((k) => <button key={k} className={kind === k ? "on" : ""} onClick={() => setKind(k)}>{k === "verify" ? "Get it verified" : k === "share" ? "Share a statement" : "Updated number"}{kind === k && <motion.i layoutId="kind2" />}</button>)}</div>
-        <input className="sheet-input" placeholder="What do you need, and by when?" value={message} onChange={(e) => setMessage(e.target.value)} />
-        <button className="pill-btn ember" disabled={!to} onClick={send} style={{ alignSelf: "flex-start" }}>Send request</button>
-      </Sheet>
+      <Modal open={open} title="New request" onClose={() => setOpen(false)}>
+        <div className="choice-list">{orgs.map((o) => <button key={o.id} className={`choice-row ${to === String(o.id) ? "on" : ""}`} onClick={() => setTo(String(o.id))}><span>{o.name}</span><span className="kicker">{o.role}</span></button>)}</div>
+        <div className="chips">{[["verify", "Get it verified"], ["share", "Share a statement"], ["update", "Updated number"]].map(([k, l]) => <button key={k} className={`chip ${kind === k ? "on" : ""}`} onClick={() => setKind(k)}>{l}</button>)}</div>
+        <input className="input" placeholder="What do you need, and by when?" value={message} onChange={(e) => setMessage(e.target.value)} />
+        <button className="btn-solid ember" disabled={!to} style={{ alignSelf: "flex-start" }} onClick={send}>Send request</button>
+      </Modal>
     </div>
   );
 }
