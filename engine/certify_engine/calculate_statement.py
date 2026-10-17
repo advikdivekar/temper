@@ -7,7 +7,7 @@ WHAT THIS FILE DOES
 
 HOW THE CALCULATION GOES
     1. Direct emissions from fuel
-    2. Indirect emissions from electricity
+    2. Indirect emissions from electricity (only if the rules count it)
     3. Emissions carried in by precursors
     4. Add them into one plant total
     5. Split the total across products (allocation)
@@ -24,20 +24,25 @@ CONCEPTS IN THIS FILE
         Verifiers read the trace instead of trusting a black box.
     Specific embedded emissions (SEE)
         Tonnes of CO2 per tonne of product. The number buyers need.
-    Simplification
-        This first version allocates every emission source by tonnes
-        of product. The real rules are more detailed. We refine them
-        as we encode the official methodology.
+    Attribution key
+        Emissions are split by the functional unit of each good, which
+        for metal goods is the tonne (Implementing Regulation 2025/2547,
+        Annex III). Plants that need molar ratios or heat flow rules
+        are outside this version.
+    Methodology
+        The rule set in force. It decides whether electricity counts,
+        and how many decimals the result carries.
 """
 
 from dataclasses import dataclass
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 from certify_engine.allocation import allocate
 from certify_engine.direct_emissions import FuelUse, total_direct_emissions
 from certify_engine.emission_factors import EmissionFactor
 from certify_engine.indirect_emissions import indirect_emissions
-from certify_engine.precursors import PrecursorUse, precursor_emissions
+from certify_engine.methodology import Methodology
+from certify_engine.precursors import PrecursorLot, precursor_emissions
 from certify_engine.quantity import Quantity
 
 
@@ -53,10 +58,11 @@ class ProductOutput:
 class PlantData:
     """Everything confirmed about the plant for one period."""
 
+    year: int
     fuels: list[FuelUse]
     electricity: Quantity
     grid_factor: EmissionFactor
-    precursors: list[PrecursorUse]
+    precursors: list[PrecursorLot]
     products: list[ProductOutput]
 
 
@@ -64,21 +70,37 @@ class PlantData:
 class StatementResult:
     """What the engine returns."""
 
+    methodology: str
     total_tco2: Decimal
     see_by_product: dict[str, Decimal]
     trace: list[str]
 
 
-def calculate_statement(plant: PlantData) -> StatementResult:
-    trace = []
+def round_see(value: Decimal, decimals: int) -> Decimal:
+    """Round SEE to the number of decimals the rules allow."""
+    step = Decimal(1).scaleb(-decimals)
+    return value.quantize(step, rounding=ROUND_HALF_UP)
+
+
+def calculate_statement(
+    plant: PlantData, methodology: Methodology
+) -> StatementResult:
+    trace = [f"Methodology {methodology.name} v{methodology.version}"]
 
     direct = total_direct_emissions(plant.fuels)
     trace.append(f"Direct emissions: {direct.value} tCO2")
 
-    indirect = indirect_emissions(plant.electricity, plant.grid_factor)
-    trace.append(f"Indirect emissions: {indirect.value} tCO2")
+    if methodology.includes_indirect:
+        indirect = indirect_emissions(plant.electricity, plant.grid_factor)
+        trace.append(f"Indirect emissions: {indirect.value} tCO2")
+    else:
+        indirect = Quantity(0, "tco2")
+        trace.append("Indirect emissions: not counted for these goods")
 
-    carried = precursor_emissions(plant.precursors)
+    carried, lots = precursor_emissions(
+        plant.precursors, plant.year, methodology
+    )
+    trace.extend(lot.line for lot in lots)
     trace.append(f"Precursor emissions: {carried.value} tCO2")
 
     total = direct + indirect + carried
@@ -92,11 +114,16 @@ def calculate_statement(plant: PlantData) -> StatementResult:
     see_by_product = {}
     for product in plant.products:
         share = shares[product.name]
-        see = share / product.tonnes_made
+        see = round_see(share / product.tonnes_made, methodology.see_decimals)
         see_by_product[product.name] = see
         trace.append(
             f"{product.name}: share {share} tCO2 over "
             f"{product.tonnes_made} t gives {see} tCO2 per tonne"
         )
 
-    return StatementResult(total.value, see_by_product, trace)
+    return StatementResult(
+        methodology=f"{methodology.name}:{methodology.version}",
+        total_tco2=total.value,
+        see_by_product=see_by_product,
+        trace=trace,
+    )
