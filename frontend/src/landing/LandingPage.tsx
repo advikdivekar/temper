@@ -11,7 +11,7 @@
 import { EnterProvider } from "./EnterContext";
 import { FloatingCta } from "./parts/FloatingCta";
 import { FloatingNav } from "./parts/FloatingNav";
-import { SceneIndex } from "./parts/SceneIndex";
+import { LogoStrip } from "./parts/LogoStrip";
 import { ArchScene } from "./scenes/ArchScene";
 import { DeckScene } from "./scenes/DeckScene";
 import { DefaultScene } from "./scenes/DefaultScene";
@@ -28,9 +28,9 @@ export function LandingPage() {
     <EnterProvider>
       <div className="lp">
         <FloatingNav />
-        <SceneIndex total={9} />
         <main>
           <HeroScene />
+          <LogoStrip />
           <WorldScene />
           <StatementScene />
           <DefaultScene />

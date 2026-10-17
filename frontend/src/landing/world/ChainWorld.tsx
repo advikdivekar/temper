@@ -14,9 +14,8 @@
 // it and shows details outside the picture, so nothing depends on
 // seeing the animation.
 
-import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
+import { motion, useTransform } from "motion/react";
 import type { MotionValue } from "motion/react";
-import { useEffect } from "react";
 import { IsoBox } from "./IsoBox";
 import type { Tone } from "./IsoBox";
 import { groundPath, project, toPoints } from "./iso";
@@ -73,22 +72,6 @@ export function ChainWorld({ heat, selected, tempered, onSelect }: Props) {
   const seeValue = useTransform(heat, [0, 1], [DEFAULT_SEE, VERIFIED_SEE]);
   const percent = useTransform(heat, [0, 1], [0, 47]);
 
-  // Gentle parallax: the scene leans toward the pointer.
-  const px = useMotionValue(0);
-  const py = useMotionValue(0);
-  const sx = useSpring(px, { stiffness: 60, damping: 18 });
-  const sy = useSpring(py, { stiffness: 60, damping: 18 });
-  useEffect(() => {
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) return;
-    const move = (e: PointerEvent) => {
-      px.set((e.clientX / window.innerWidth - 0.5) * -16);
-      py.set((e.clientY / window.innerHeight - 0.5) * -10);
-    };
-    window.addEventListener("pointermove", move);
-    return () => window.removeEventListener("pointermove", move);
-  }, [px, py]);
-
   const diamond = toPoints([project(0, 0), project(10, 0), project(10, 10), project(0, 10)]);
   const gridLines = Array.from({ length: 11 }, (_, i) => i);
   const roadOne = groundPath([[3.7, 6.1], [5.9, 6.1], [5.9, 5.0]]);
@@ -124,7 +107,7 @@ export function ChainWorld({ heat, selected, tempered, onSelect }: Props) {
         </radialGradient>
       </defs>
 
-      <motion.g style={{ x: sx, y: sy }}>
+      <g>
         <polygon points={diamond} fill="url(#ground-fade)" stroke="#ffffff" strokeOpacity="0.14" />
         {gridLines.map((i) => (
           <g key={i} stroke="#ffffff" strokeOpacity="0.06">
@@ -199,7 +182,7 @@ export function ChainWorld({ heat, selected, tempered, onSelect }: Props) {
             </motion.g>
           );
         })()}
-      </motion.g>
+      </g>
     </svg>
   );
 }
