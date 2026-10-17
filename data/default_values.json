@@ -1,0 +1,13 @@
+{
+  "note": "UNVERIFIED. Taken from secondary sources. Replace from Annex I of the official Commission default values regulation.",
+  "defaults": [
+    {"cn_code": "7208", "country": "IN", "base_tco2_per_tonne": "4.28",
+     "source": "secondary source, unverified", "version": "unverified_v1"},
+    {"cn_code": "7208", "country": "other", "base_tco2_per_tonne": "4.28",
+     "source": "placeholder", "version": "unverified_v1"},
+    {"cn_code": "7201", "country": "IN", "base_tco2_per_tonne": "2.53",
+     "source": "secondary source, unverified", "version": "unverified_v1"},
+    {"cn_code": "7201", "country": "other", "base_tco2_per_tonne": "2.53",
+     "source": "placeholder", "version": "unverified_v1"}
+  ]
+}

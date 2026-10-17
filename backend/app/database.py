@@ -17,6 +17,7 @@ CONCEPTS IN THIS FILE
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 DEFAULT_URL = "sqlite:///temper.db"
 
@@ -27,6 +28,17 @@ class Base(DeclarativeBase):
 
 def make_session_factory(url: str = DEFAULT_URL):
     """Build the tables if needed and return a session factory."""
-    engine = create_engine(url)
+    # Importing the models package registers every table with Base.
+    import app.models  # noqa: F401
+
+    options = {}
+    if url.startswith("sqlite") and ":memory:" in url or url == "sqlite://":
+        # One shared connection, so an in memory database survives
+        # across requests and threads (used by tests).
+        options = {
+            "connect_args": {"check_same_thread": False},
+            "poolclass": StaticPool,
+        }
+    engine = create_engine(url, **options)
     Base.metadata.create_all(engine)
-    return sessionmaker(engine)
+    return sessionmaker(engine, expire_on_commit=False)

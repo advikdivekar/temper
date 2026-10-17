@@ -23,7 +23,7 @@ from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import ActivityRecord
+from app.models.plant import ActivityRecord
 
 
 def _now() -> datetime:
@@ -40,9 +40,11 @@ def add_record(
     valid_to: date,
     evidence_id: int,
     recorded_at: datetime | None = None,
+    installation_id: int | None = None,
 ) -> ActivityRecord:
     """Append a new confirmed record."""
     record = ActivityRecord(
+        installation_id=installation_id,
         kind=kind,
         name=name,
         amount=amount,
@@ -66,6 +68,7 @@ def correct_record(
 ) -> ActivityRecord:
     """Append a replacement for old. The old row is left untouched."""
     record = ActivityRecord(
+        installation_id=old.installation_id,
         kind=old.kind,
         name=old.name,
         amount=new_amount,

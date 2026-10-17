@@ -24,7 +24,7 @@ from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import Evidence
+from app.models.plant import Evidence
 
 
 def hash_bytes(data: bytes) -> str:

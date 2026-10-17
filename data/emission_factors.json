@@ -1,0 +1,13 @@
+{
+  "note": "PLACEHOLDER VALUES. Replace with the official values and cite the source before any real use.",
+  "factors": [
+    {"name": "coal", "value": "2.4", "per_unit": "tonne",
+     "source": "placeholder", "version": "placeholder_v1"},
+    {"name": "natural_gas", "value": "0.056", "per_unit": "gj",
+     "source": "placeholder", "version": "placeholder_v1"},
+    {"name": "diesel", "value": "0.0741", "per_unit": "gj",
+     "source": "placeholder", "version": "placeholder_v1"},
+    {"name": "grid_india", "value": "0.00071", "per_unit": "kwh",
+     "source": "placeholder", "version": "placeholder_v1"}
+  ]
+}

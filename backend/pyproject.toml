@@ -3,7 +3,7 @@ name = "temper_backend"
 version = "0.1.0"
 description = "Temper API, ledger and evidence storage"
 requires-python = ">=3.11"
-dependencies = ["sqlalchemy>=2.0", "fastapi", "uvicorn"]
+dependencies = ["sqlalchemy>=2.0", "fastapi", "uvicorn", "cryptography", "python-multipart", "pydantic>=2", "certify_engine"]
 
 [project.optional-dependencies]
 dev = ["pytest", "httpx"]
