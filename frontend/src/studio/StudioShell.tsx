@@ -1,21 +1,17 @@
 // studio/StudioShell.tsx
-// The frame around every signed in page. There is no sidebar and no
-// dashboard grid. Instead a floating bar, the same one used on the
-// landing page: a pill of the few pages you use most on the left, the
-// wordmark in the middle, and on the right a search shortcut, a bell
-// and your organization's avatar, which opens a menu with the rest.
-//
-// Every page below it is a full screen "stage": one idea, large type,
-// and motion. Pages fade and rise in as you move between them.
+// The frame around every signed in page. A calm floating bar: a pill
+// with the four pages you use most, the wordmark in the middle, and
+// your avatar on the right. The avatar opens a menu with everything
+// else (records, requests, the library, your organization), so the bar
+// itself stays simple. Cmd+K opens a quick search from anywhere.
 
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import type { Overview } from "../api/types";
 import { Wordmark } from "../brand/Brand";
-import { Icon } from "../ui/Icons";
 import { CommandPalette } from "../shell/CommandPalette";
 import { studioNav } from "../shell/nav";
 
@@ -25,87 +21,63 @@ export function StudioShell() {
   const navigate = useNavigate();
   const [palette, setPalette] = useState(false);
   const [menu, setMenu] = useState(false);
-  const [bell, setBell] = useState(false);
-  const [alerts, setAlerts] = useState<Overview["attention"]>([]);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [count, setCount] = useState(0);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPalette((p) => !p); }
-      if (e.key === "Escape") { setMenu(false); setBell(false); }
+      if (e.key === "Escape") setMenu(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   useEffect(() => {
-    api<Overview>("/overview").then((o) => setAlerts(o.attention)).catch(() => undefined);
-    setMenu(false); setBell(false);
+    api<Overview>("/overview").then((o) => setCount(o.attention.length)).catch(() => undefined);
+    setMenu(false);
   }, [location.pathname]);
 
   if (!me) return null;
   const { primary, more } = studioNav(me.role);
-  const initial = me.organization_name.slice(0, 1).toUpperCase();
 
   return (
     <div className="studio">
-      <header className="sbar-wrap">
-        <div className="sbar">
-          <nav className="spill" aria-label="Main">
+      <header className="bar-wrap">
+        <div className="bar">
+          <nav className="pill-nav" aria-label="Main">
             {primary.map((item) => (
-              <NavLink key={item.to} to={item.to} className="spill-item">
+              <NavLink key={item.to} to={item.to} className="pill-link">
                 {({ isActive }) => (
                   <>
-                    {isActive && <motion.span layoutId="studio-pill" className="spill-on" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
-                    <span className="spill-label">{item.label}</span>
+                    {isActive && <motion.span layoutId="pill-on" className="pill-on" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
+                    <span className="pill-text">{item.label}</span>
                   </>
                 )}
               </NavLink>
             ))}
           </nav>
-
-          <Link to="/overview" className="sbrand" aria-label="Home"><Wordmark height={22} tone="light" /></Link>
-
-          <div className="sright">
-            <button className="sglass sk" onClick={() => setPalette(true)} aria-label="Search"><Icon name="eye" size={15} /><kbd>⌘K</kbd></button>
-            <div className="smenu-wrap">
-              <button className="sglass sbell" onClick={() => { setBell(!bell); setMenu(false); }} aria-label={`Notifications, ${alerts.length}`}>
-                <Icon name="flame" size={16} />
-                {alerts.length > 0 && <motion.span className="sdot" initial={{ scale: 0 }} animate={{ scale: 1 }}>{alerts.length}</motion.span>}
+          <Link to="/overview" className="brand" aria-label="Home"><Wordmark height={22} tone="dark" /></Link>
+          <div className="bar-right">
+            <div className="menu-wrap">
+              <button className="avatar-btn" onClick={() => setMenu(!menu)} aria-expanded={menu} aria-label="Menu">
+                {me.organization_name.slice(0, 1).toUpperCase()}
+                {count > 0 && <span className="badge">{count}</span>}
               </button>
               <AnimatePresence>
-                {bell && (
-                  <motion.div className="spanel" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                    <span className="mono kicker">NEEDS YOU</span>
-                    {alerts.length === 0 && <p className="muted-light">All clear.</p>}
-                    {alerts.slice(0, 5).map((a, i) => (
-                      <Link key={i} to={a.link} className="spanel-row" onClick={() => setBell(false)}>
-                        <i className={a.severity} /><span>{a.title}</span>
-                      </Link>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-            <div className="smenu-wrap" ref={menuRef}>
-              <button className="sglass savatar" onClick={() => { setMenu(!menu); setBell(false); }} aria-label="Menu" aria-expanded={menu}>{initial}</button>
-              <AnimatePresence>
                 {menu && (
-                  <motion.div className="spanel" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                    <span className="mono kicker">{me.organization_name} / {me.role}</span>
+                  <motion.div className="menu" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
+                    <span className="kicker">{me.organization_name} / {me.role}</span>
                     {primary.map((item) => (
-                      <Link key={item.to} to={item.to} className="spanel-row only-mobile" onClick={() => setMenu(false)}>
-                        <span>{item.label}</span><Icon name="arrow" size={13} />
-                      </Link>
+                      <Link key={item.to} to={item.to} className="menu-row mobile-only" onClick={() => setMenu(false)}>{item.label}</Link>
                     ))}
                     {more.map((item) => (
-                      <Link key={item.to} to={item.to} className="spanel-row" onClick={() => setMenu(false)}>
-                        <span>{item.label}</span><Icon name="arrow" size={13} />
-                      </Link>
+                      <Link key={item.to} to={item.to} className="menu-row" onClick={() => setMenu(false)}>{item.label}</Link>
                     ))}
-                    <Link to="/architecture" className="spanel-row"><span>Architecture</span><Icon name="arrow" size={13} /></Link>
-                    <Link to="/verify" className="spanel-row"><span>Verify a pack</span><Icon name="arrow" size={13} /></Link>
-                    <button className="spanel-row" onClick={() => { signOut(); navigate("/"); }}><span>Switch persona</span><Icon name="arrow" size={13} /></button>
+                    <hr />
+                    <button className="menu-row" onClick={() => { setMenu(false); setPalette(true); }}>Search <small className="mono">⌘K</small></button>
+                    <Link to="/architecture" className="menu-row">Architecture</Link>
+                    <Link to="/verify" className="menu-row">Verify a pack</Link>
+                    <button className="menu-row" onClick={() => { signOut(); navigate("/"); }}>Switch persona</button>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -114,14 +86,12 @@ export function StudioShell() {
         </div>
       </header>
 
-      <main className="stage-main">
-        <AnimatePresence mode="wait">
-          <motion.div key={location.pathname} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}>
-            <Outlet />
-          </motion.div>
-        </AnimatePresence>
-      </main>
+      <AnimatePresence mode="wait">
+        <motion.main key={location.pathname} className="page" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }} transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}>
+          <Outlet />
+        </motion.main>
+      </AnimatePresence>
       <CommandPalette open={palette} onClose={() => setPalette(false)} />
     </div>
   );

@@ -1,26 +1,15 @@
 // studio/pages/StatementsPage.tsx
-// Statements, as a timeline rather than a list. Each plant and product
-// is a lane. Each quarter is a node on that lane, with its emissions
-// per tonne inside it. The ring around a node says what state it is
-// in:
-//   green ring   verified
-//   amber ring   signed, waiting for a verifier
-//   red pulse    out of date, an upstream number changed
-//   grey ring    draft, not signed yet
-// Hover a node for the detail. Click to open the statement.
-//
-// Why a timeline: the question people really ask is "where do I
-// stand, quarter by quarter, and what is stuck". A grid of identical
-// cards hides that. Lanes and rings show it at a glance.
+// Statements, quarter by quarter. Each plant and product is a heading
+// with four quarter cells under it. Each cell holds the number and one
+// plain word for its state (verified, awaiting a verifier, out of date,
+// draft), with a coloured dot. Click a cell to open the statement.
 
-import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { api } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import type { Statement } from "../../api/types";
 import { quarterOf } from "../../lib/format";
-import { Icon } from "../../ui/Icons";
 import { useToast } from "../../ui/Toast";
 
 const QUARTERS = ["Q1 2026", "Q2 2026", "Q3 2026", "Q4 2026"];
@@ -28,70 +17,39 @@ const productOf = (s: Statement) => Object.keys(s.see_by_product)[0];
 const seeOf = (s: Statement) => Number(s.see_by_product[productOf(s)]);
 const defOf = (s: Statement) => Number(s.default_see_by_product?.[productOf(s)] ?? 0);
 
-function stateOf(s: Statement): { key: string; label: string } {
-  if (s.status === "stale") return { key: "stale", label: "Out of date" };
-  if (s.verified) return { key: "verified", label: "Verified" };
-  if (s.status === "signed") return { key: "awaiting", label: "Awaiting verifier" };
-  return { key: "draft", label: "Draft" };
-}
-
-function Node({ s, index }: { s: Statement; index: number }) {
-  const navigate = useNavigate();
-  const [hover, setHover] = useState(false);
-  const state = stateOf(s);
-  const cut = defOf(s) > 0 ? Math.round((1 - seeOf(s) / defOf(s)) * 100) : 0;
-  return (
-    <div className="tl-cell">
-      <motion.button className={`tl-node ${state.key}`} onClick={() => navigate(`/statements/${s.id}`)}
-        onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} onFocus={() => setHover(true)} onBlur={() => setHover(false)}
-        initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.15 + index * 0.07, type: "spring", stiffness: 220, damping: 18 }}
-        whileHover={{ scale: 1.08 }} aria-label={`Statement ${s.id}, ${seeOf(s).toFixed(2)} tCO2 per tonne, ${state.label}`}>
-        <span className="tl-num">{seeOf(s).toFixed(2)}</span>
-        {state.key === "stale" && <i className="tl-pulse" />}
-      </motion.button>
-      <span className="tl-cut mono">{cut > 0 ? `-${cut}%` : "default"}</span>
-      <AnimatePresence>
-        {hover && (
-          <motion.div className="tl-tip" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-            <span className="mono kicker">#{s.id} / {state.label}</span>
-            <strong>{productOf(s).replace("_", " ")}</strong>
-            <span>EU default {defOf(s) ? defOf(s).toFixed(2) : "n/a"}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
+function state(s: Statement) {
+  if (s.status === "stale") return { tone: "bad", label: "Out of date" };
+  if (s.verified) return { tone: "good", label: "Verified" };
+  if (s.status === "signed") return { tone: "warn", label: "Awaiting a verifier" };
+  return { tone: "", label: "Draft" };
 }
 
 function Lanes({ rows, title }: { rows: Statement[]; title?: string }) {
   const lanes = useMemo(() => {
     const map = new Map<string, Statement[]>();
-    for (const s of rows) {
-      const key = `${s.supplier}|${s.installation}|${productOf(s)}`;
-      map.set(key, [...(map.get(key) ?? []), s]);
-    }
+    for (const s of rows) { const key = `${s.supplier}|${s.installation}|${productOf(s)}`; map.set(key, [...(map.get(key) ?? []), s]); }
     return [...map.entries()].map(([key, list]) => ({ key, list, head: key.split("|") }));
   }, [rows]);
-  if (lanes.length === 0) return null;
-  let counter = 0;
+  if (!lanes.length) return null;
   return (
-    <div className="lanes">
-      {title && <span className="kicker mono lanes-title">{title}</span>}
-      <div className="lane-head">
-        <span />{QUARTERS.map((q) => <span key={q} className="mono">{q.split(" ")[0]}</span>)}
-      </div>
+    <div>
+      {title && <span className="kicker" style={{ display: "block", marginTop: 36 }}>{title}</span>}
       {lanes.map((lane) => (
-        <div key={lane.key} className="lane-row">
-          <div className="lane-label">
-            <strong>{lane.head[2].replace("_", " ")}</strong>
-            <span>{lane.head[1]}</span>
-            <span className="mono">{lane.head[0]}</span>
-          </div>
-          <div className="lane-track">
-            <i className="lane-line" />
+        <div key={lane.key} className="lane">
+          <div className="lane-title"><h2>{lane.head[2].replace("_", " ")}</h2><span className="kicker">{lane.head[1]} / {lane.head[0]}</span></div>
+          <div className="quarters">
             {QUARTERS.map((q) => {
               const s = [...lane.list].reverse().find((x) => quarterOf(x.period_start) === q);
-              return s ? <Node key={q} s={s} index={counter++} /> : <div key={q} className="tl-cell"><span className="tl-empty" /></div>;
+              if (!s) return <div key={q} className="qcell"><span className="kicker">{q.split(" ")[0]}</span><span className="qnote">No statement</span></div>;
+              const st = state(s), cut = defOf(s) > 0 ? Math.round((1 - seeOf(s) / defOf(s)) * 100) : 0;
+              return (
+                <Link key={q} to={`/statements/${s.id}`} className="qcell">
+                  <span className="kicker">{q.split(" ")[0]}</span>
+                  <span className="qnum">{seeOf(s).toFixed(2)}</span>
+                  <span className="qstate"><i className={`dot ${st.tone}`} />{st.label}</span>
+                  <span className="qnote">{cut > 0 ? `${cut}% below default` : "at the default"}</span>
+                </Link>
+              );
             })}
           </div>
         </div>
@@ -117,11 +75,8 @@ export function StatementsPage() {
 
   async function recompute() {
     setBusy(true);
-    try {
-      const rebuilt = await api<Statement[]>("/statements/recompute", { method: "POST" });
-      toast.success("Recomputed", `${rebuilt.length} statement(s) updated.`);
-      await load();
-    } catch (e) { toast.error("Recompute failed", (e as Error).message); }
+    try { const r = await api<Statement[]>("/statements/recompute", { method: "POST" }); toast.success("Recomputed", `${r.length} statement(s) updated.`); await load(); }
+    catch (e) { toast.error("Recompute failed", (e as Error).message); }
     finally { setBusy(false); }
   }
 
@@ -130,39 +85,24 @@ export function StatementsPage() {
   const stale = all.filter((s) => s.status === "stale").length;
   const verified = all.filter((s) => s.verified).length;
   const awaiting = all.filter((s) => s.status === "signed" && !s.verified).length;
-  const own = me.role === "supplier" ? all : all;
 
   return (
     <div>
-      <div className="stage-head">
-        <span className="kicker mono">{me.organization_name}</span>
-        <h1 className="stage-title">{me.role === "importer" ? "Your suppliers, quarter by quarter." : me.role === "verifier" ? "The queue, quarter by quarter." : "Your statements, quarter by quarter."}</h1>
-        <div className="row-chips">
-          <span className="chip good"><i />{verified} verified</span>
-          <span className="chip warn"><i />{awaiting} awaiting a verifier</span>
-          {stale > 0 && <span className="chip bad"><i />{stale} out of date</span>}
-        </div>
+      <div className="head">
+        <span className="kicker">{me.organization_name}</span>
+        <h1 className="title">{me.role === "verifier" ? "Statements to review." : me.role === "importer" ? "Your suppliers, quarter by quarter." : "Your statements, quarter by quarter."}</h1>
+        <p className="lead">{verified} verified, {awaiting} awaiting a verifier{stale ? `, ${stale} out of date` : ""}.</p>
       </div>
-
       {stale > 0 && me.role === "supplier" && (
-        <motion.div className="stale-bar" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
-          <span className="tl-pulse-dot" /> An upstream supplier changed a number. Some statements are out of date.
-          <button className="pill-btn ember" disabled={busy} onClick={recompute}><Icon name="refresh" size={15} />{busy ? "Recomputing" : "Recompute"}</button>
-        </motion.div>
+        <div className="notice">An upstream supplier changed a number, so some statements are out of date.
+          <button className="btn-solid" disabled={busy} onClick={recompute}>{busy ? "Recomputing..." : "Recompute"}</button></div>
       )}
-
-      {!mine ? <div className="skeleton" style={{ height: 320 }} /> : all.length === 0 && incoming.length === 0 ? (
-        <div className="empty-stage"><Icon name="flame" size={30} /><p>Nothing here yet.</p></div>
-      ) : (
+      {!mine ? <div className="skeleton" style={{ height: 300 }} /> : all.length === 0 && incoming.length === 0 ? <p className="row-empty">Nothing here yet.</p> : (
         <>
-          <Lanes rows={own} title={me.role === "supplier" ? "YOURS" : undefined} />
+          <Lanes rows={all} title={me.role === "supplier" ? "YOURS" : undefined} />
           {incoming.length > 0 && <Lanes rows={incoming} title="FROM YOUR SUPPLIERS" />}
         </>
       )}
-      <div className="tl-legend mono">
-        <span><i className="verified" />verified</span><span><i className="awaiting" />awaiting verifier</span>
-        <span><i className="stale" />out of date</span><span><i className="draft" />draft</span>
-      </div>
     </div>
   );
 }

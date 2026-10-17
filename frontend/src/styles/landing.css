@@ -7,7 +7,7 @@
    accent and always means "the thing that matters" (heat, the
    verified number, the main action). */
 
-.lp, .studio {
+.lp {
   --bg: #08090a; --bg-2: #0e1012; --raised: #12161a;
   --text: #f1f0ee; --text-2: #a3a39f; --text-3: #6f6f6b;
   --rule: rgba(255, 255, 255, 0.12);
