@@ -22,6 +22,7 @@ export function HeroScene() {
       <div className="sky-matrix" aria-hidden />
       <FactoryField />
       <ChartOverlay />
+      <span className="mono hero-note">Illustrative: synthetic demo figures</span>
 
       <div className="hero-center">
         <motion.span className="hero-tag mono" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>

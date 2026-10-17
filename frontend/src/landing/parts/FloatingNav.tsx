@@ -7,10 +7,9 @@
 // menu button and the pill shrinks.
 
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Wordmark } from "../../brand/Brand";
-import { useEnter } from "../EnterContext";
 
 const LINKS = [
   { id: "world", label: "The chain" },
@@ -24,8 +23,19 @@ function go(id: string) {
 
 export function FloatingNav() {
   const [open, setOpen] = useState(false);
-  const { personas } = useEnter();
   const navigate = useNavigate();
+  // Over the light paper scenes the wordmark turns dark so it stays readable.
+  const [onPaper, setOnPaper] = useState(false);
+  useEffect(() => {
+    const scenes = [...document.querySelectorAll(".paper-scene")];
+    const hits = new Set<Element>();
+    const watcher = new IntersectionObserver((entries) => {
+      for (const e of entries) { if (e.isIntersecting) hits.add(e.target); else hits.delete(e.target); }
+      setOnPaper(hits.size > 0);
+    }, { rootMargin: "0px 0px -92% 0px" });
+    scenes.forEach((s) => watcher.observe(s));
+    return () => watcher.disconnect();
+  }, []);
   return (
     <header className="fnav-wrap">
       <div className="fnav-bar">
@@ -37,12 +47,8 @@ export function FloatingNav() {
           <button className="fnav-burger" aria-label="Menu" aria-expanded={open} onClick={() => setOpen(!open)}><span /><span /></button>
         </nav>
         <button className="fnav-brand" aria-label="Back to top" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-          <Wordmark height={26} tone="light" />
+          <Wordmark height={24} tone={onPaper ? "dark" : "light"} />
         </button>
-        <div className="fnav-right">
-          <button className="fnav-verify" onClick={() => navigate("/verify")}>Verify a pack</button>
-          <button className="fnav-open" onClick={() => go("enter")} disabled={personas.length === 0}>Open demo</button>
-        </div>
       </div>
       <AnimatePresence>
         {open && (

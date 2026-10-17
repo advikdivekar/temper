@@ -45,3 +45,18 @@ export function SvgReadout({
 
   return <text ref={ref} x={x} y={y} className={className} />;
 }
+
+/** The same idea for a run of text inside an SVG text element (a tspan). */
+export function ReadoutSpan({ source, format }: Omit<Props, "className">) {
+  const ref = useRef<SVGTSpanElement>(null);
+
+  useEffect(() => {
+    const write = (value: number) => {
+      if (ref.current) ref.current.textContent = format(value);
+    };
+    write(source.get());
+    return source.on("change", write);
+  }, [source, format]);
+
+  return <tspan ref={ref} />;
+}

@@ -16,7 +16,7 @@ import type { MotionValue } from "motion/react";
 import { IsoBox } from "./IsoBox";
 import type { Tone } from "./IsoBox";
 import { groundPath, project, toPoints } from "./iso";
-import { SvgReadout } from "./Readout";
+import { ReadoutSpan } from "./Readout";
 
 export type NodeKey = "mill" | "bolts" | "verifier" | "importer";
 
@@ -46,22 +46,25 @@ const FOOTPRINT: Record<NodeKey, [number, number, number, number]> = {
 };
 
 function Label({
-  gx, gy, gz, title, value, source, format, strong,
+  gx, gy, gz, title, value, unit, source, format, accent,
 }: {
-  gx: number; gy: number; gz: number; title: string; value?: string;
-  source?: MotionValue<number>; format?: (v: number) => string; strong?: boolean;
+  gx: number; gy: number; gz: number; title: string; value?: string; unit?: string;
+  source?: MotionValue<number>; format?: (v: number) => string; accent?: boolean;
 }) {
   const base = project(gx, gy, gz);
   const top = project(gx, gy, gz + 1.3);
-  const x = top.x - 58, y = top.y - 46;
+  // One consistent label: small caps title above, one value line below.
+  const w = 132, h = 44;
+  const x = top.x - w / 2, y = top.y - h;
   return (
     <g pointerEvents="none">
-      <line x1={base.x} y1={base.y} x2={top.x} y2={top.y} stroke="#ffffff" strokeOpacity="0.4" strokeDasharray="2 3" />
-      <rect x={x} y={y} width="116" height="46" fill="#0b0c0e" stroke="#ffffff" strokeOpacity="0.28" />
-      <text x={x + 10} y={y + 17} className="svg-mono" fill="#a8a8a8" fontSize="9">{title}</text>
-      {source && format
-        ? <SvgReadout source={source} format={format} x={x + 10} y={y + 38} className={strong ? "svg-serif big" : "svg-serif"} />
-        : <text x={x + 10} y={y + 38} className="svg-serif">{value}</text>}
+      <line x1={base.x} y1={base.y} x2={top.x} y2={top.y} stroke="#ffffff" strokeOpacity="0.35" strokeDasharray="2 3" />
+      <rect x={x} y={y} width={w} height={h} fill="#0b0c0e" stroke="#ffffff" strokeOpacity="0.25" />
+      <text x={x + 10} y={y + 16} className="lab-title">{title}</text>
+      <text x={x + 10} y={y + 35} className={`lab-value ${accent ? "accent" : ""}`}>
+        {source && format ? <ReadoutSpan source={source} format={format} /> : value}
+        {unit && <tspan className="lab-unit"> {unit}</tspan>}
+      </text>
     </g>
   );
 }
@@ -140,9 +143,9 @@ export function ChainWorld({ state, focus }: { state: WorldState; focus: NodeKey
 
       {/* Labels sit on a top layer so no building can hide them. */}
       <Label gx={1.85} gy={1.85} gz={3.5} title="VERIFIER" value="signs opinions" />
-      <Label gx={2.3} gy={6.0} gz={1.6} title="STEEL MILL" value="2.40 tCO2/t" />
+      <Label gx={2.3} gy={6.0} gz={1.6} title="STEEL MILL" value="2.40" unit="tCO2/t" />
       <Label gx={8.1} gy={1.5} gz={4.7} title="EU IMPORTER" source={state.saving} format={(v) => (v < 1 ? "pays default" : `saves ${Math.round(v)}%`)} />
-      <Label gx={5.7} gy={4.8} gz={1.6} title="BOLT WORKS" source={state.boltsNumber} format={(v) => `${v.toFixed(2)} tCO2/t`} strong />
+      <Label gx={5.7} gy={4.8} gz={1.6} title="BOLT WORKS" source={state.boltsNumber} format={(v) => v.toFixed(2)} unit="tCO2/t" accent />
 
       <motion.g style={{ opacity: verifiedTick }}>
         <circle cx={project(1.85, 1.85, 4.8).x + 58} cy={project(1.85, 1.85, 4.8).y - 46} r="10" fill="#0f9d6b" />

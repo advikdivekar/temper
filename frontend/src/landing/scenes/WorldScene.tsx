@@ -1,110 +1,127 @@
 // landing/scenes/WorldScene.tsx
-// Scene 2: a guided, step by step walkthrough of ONE number as it
-// moves through a supply chain. Five steps, always in the same order,
-// with Back and Next, a dot for each step, and an optional Play that
-// advances on its own.
+// Scene 2: hold to follow ONE number through a supply chain.
 //
-// Why a sequence: the idea is easy to lose when everything moves at
-// once. Here, each step changes one thing in the picture, outlines the
-// building it is about, and says in a sentence what is happening.
+// The hold is a timeline. Holding the button for about five seconds
+// plays four stages in a fixed order:
+//   1 the mill records its data
+//   2 a verifier signs it off
+//   3 the bolt works links to the verified number
+//   4 the importer sees the saving
+// Let go early and everything drains back, so you always see the
+// stages in order and never skip ahead. A caption beside the picture
+// says which stage you are in and what is happening, and four bars
+// fill as you go.
 //
-// How it works: the step number picks a row from STEPS. Each row
-// lists target values (0 to 1) for the parts of the picture, and we
-// animate the picture's values toward them. The picture never decides
-// anything itself.
+// How: the hold gives a progress value from 0 to 1. Each part of the
+// picture is a simple function of that value (for example, the
+// verifier lights up between 20 and 40 percent). Nothing is stored
+// per stage, so the picture can never disagree with the caption.
+//
+// Fallbacks: Space or Enter held works like a pointer hold, and
+// "Show the result" jumps straight to the end.
 
-import { animate, useMotionValue } from "motion/react";
-import { useEffect, useState } from "react";
+import { motion, useMotionValueEvent, useTransform } from "motion/react";
+import type { MotionValue } from "motion/react";
+import { useState } from "react";
 import { Reveal } from "../../ui/Reveal";
-import { Icon } from "../../ui/Icons";
 import { ChainWorld } from "../world/ChainWorld";
 import type { NodeKey, WorldState } from "../world/ChainWorld";
+import { useHold } from "../world/useHold";
 
-interface Targets {
-  mill: number; verifier: number; bolts: number; importer: number;
-  roadA: number; roadB: number; boltsNumber: number; saving: number;
-}
+const clamp = (v: number) => Math.max(0, Math.min(1, v));
+// Progress between two points on the 0 to 1 timeline, as 0 to 1.
+const between = (p: number, from: number, to: number) => clamp((p - from) / (to - from));
 
-const STEPS: { focus: NodeKey | null; title: string; text: string; to: Targets }[] = [
-  { focus: "bolts", title: "Today, the default applies",
-    text: "The bolt works buys steel from a mill with no verified data. So the EU default is used, and the importer pays for it.",
-    to: { mill: 0, verifier: 0, bolts: 0, importer: 0, roadA: 0, roadB: 0, boltsNumber: 4.95, saving: 0 } },
-  { focus: "mill", title: "The mill records its data",
-    text: "It uploads its bills and confirms its fuel use. The engine calculates 2.40 tCO2 per tonne of steel.",
-    to: { mill: 1, verifier: 0, bolts: 0, importer: 0, roadA: 0, roadB: 0, boltsNumber: 4.95, saving: 0 } },
-  { focus: "verifier", title: "A verifier signs it off",
-    text: "They check the evidence and the calculation, then sign. Now the mill's number counts as verified.",
-    to: { mill: 1, verifier: 1, bolts: 0, importer: 0, roadA: 0, roadB: 0, boltsNumber: 4.95, saving: 0 } },
-  { focus: "bolts", title: "The bolt works links to it",
-    text: "Its steel now carries the verified number instead of the default, so its own figure falls from 4.95 to 2.64.",
-    to: { mill: 1, verifier: 1, bolts: 1, importer: 0, roadA: 1, roadB: 0, boltsNumber: 2.64, saving: 0 } },
-  { focus: "importer", title: "The importer sees the saving",
-    text: "It receives 2.64 with proof of who signed it. That is 47% below the default it would have paid.",
-    to: { mill: 1, verifier: 1, bolts: 1, importer: 1, roadA: 1, roadB: 1, boltsNumber: 2.64, saving: 47 } },
+// Where each stage starts on the timeline.
+const STARTS = [0, 0.2, 0.45, 0.72];
+
+const STAGES: { focus: NodeKey; title: string; text: string }[] = [
+  { focus: "mill", title: "The mill records its data", text: "It uploads its bills and the engine calculates 2.40 tCO2 per tonne of steel." },
+  { focus: "verifier", title: "A verifier signs it off", text: "They check the evidence and sign, so the mill's number now counts as verified." },
+  { focus: "bolts", title: "The bolt works links to it", text: "Its steel now carries verified data, so its figure falls from 4.95 to 2.64." },
+  { focus: "importer", title: "The importer sees the saving", text: "It receives 2.64 with proof of who signed it, 47% below the default." },
 ];
 
+function useDerived(progress: MotionValue<number>, fn: (p: number) => number) {
+  return useTransform(progress, fn);
+}
+
 export function WorldScene() {
-  const [step, setStep] = useState(0);
-  const [playing, setPlaying] = useState(false);
+  const [stage, setStage] = useState(-1);      // -1 idle, 0 to 3 playing
+  const [done, setDone] = useState(false);
+  const hold = useHold({ holdMs: 5200, drainMs: 1400, onComplete: () => setDone(true) });
+  const p = hold.progress;
+
+  // Which stage are we in? Update React state only when it changes.
+  useMotionValueEvent(p, "change", (v) => {
+    const next = v <= 0 ? -1 : STARTS.filter((s) => v >= s).length - 1;
+    setStage((s) => (s === next ? s : next));
+    if (v < 1) setDone((d) => (d ? false : d));
+  });
 
   const state: WorldState = {
-    mill: useMotionValue(0), verifier: useMotionValue(0), bolts: useMotionValue(0), importer: useMotionValue(0),
-    roadA: useMotionValue(0), roadB: useMotionValue(0), boltsNumber: useMotionValue(4.95), saving: useMotionValue(0),
+    mill: useDerived(p, (v) => between(v, 0, 0.14)),
+    verifier: useDerived(p, (v) => between(v, 0.2, 0.34)),
+    roadA: useDerived(p, (v) => between(v, 0.45, 0.58)),
+    bolts: useDerived(p, (v) => between(v, 0.45, 0.62)),
+    boltsNumber: useDerived(p, (v) => 4.95 - (4.95 - 2.64) * between(v, 0.48, 0.66)),
+    roadB: useDerived(p, (v) => between(v, 0.72, 0.82)),
+    importer: useDerived(p, (v) => between(v, 0.72, 0.86)),
+    saving: useDerived(p, (v) => 47 * between(v, 0.76, 0.92)),
   };
+  const dashOffset = useTransform(p, (v) => (1 - v) * 213.6);
+  const segments = STARTS.map((start, i) => {
+    const end = i === STARTS.length - 1 ? 1 : STARTS[i + 1];
+    return useTransform(p, (v) => between(v, start, end));
+  });
 
-  // Move the picture toward the current step's targets.
-  useEffect(() => {
-    const target = STEPS[step].to;
-    const moves = (Object.keys(target) as (keyof Targets)[]).map((key) =>
-      animate(state[key], target[key], { duration: 1.1, ease: [0.22, 1, 0.36, 1] }));
-    return () => moves.forEach((m) => m.stop());
-  }, [step]);
-
-  // Optional autoplay: advance every few seconds, stop at the end.
-  useEffect(() => {
-    if (!playing) return;
-    if (step >= STEPS.length - 1) { setPlaying(false); return; }
-    const timer = setTimeout(() => setStep((s) => s + 1), 4800);
-    return () => clearTimeout(timer);
-  }, [playing, step]);
-
-  const current = STEPS[step];
-  const last = step === STEPS.length - 1;
+  const current = stage >= 0 ? STAGES[stage] : null;
+  const caption = done
+    ? { n: "DONE", title: "That is the whole chain", text: "4.95 became 2.64, and every step along the way is signed." }
+    : current
+      ? { n: `STEP ${stage + 1} OF 4`, title: current.title, text: current.text }
+      : { n: "READY", title: "Hold to follow one number", text: "Today the EU default applies: the bolt works shows 4.95, and the importer pays for the gap." };
 
   return (
-    <section id="world" className="world-scene" data-scene="2">
+    <section id="world" className="world-scene">
       <Reveal className="world-copy">
         <span className="mono kicker">THE SUPPLY CHAIN</span>
         <h2 className="serif h2">Follow one number.</h2>
 
-        <div className="guide" role="group" aria-label="Walkthrough">
-          <span className="mono kicker guide-count">STEP {step + 1} OF {STEPS.length}</span>
-          <h3 key={step + "t"} className="guide-title">{current.title}</h3>
-          <p key={step + "p"} className="guide-text">{current.text}</p>
-
-          <div className="guide-dots">
-            {STEPS.map((s, i) => (
-              <button key={s.title} className={i === step ? "on" : i < step ? "past" : ""} aria-label={`Go to step ${i + 1}: ${s.title}`}
-                onClick={() => { setStep(i); setPlaying(false); }} />
-            ))}
+        <div className="guide" aria-live="polite">
+          <div className="guide-segments" aria-hidden>
+            {segments.map((s, i) => (<i key={i}><motion.b style={{ scaleX: s }} /></i>))}
           </div>
-
-          <div className="guide-controls">
-            <button className="guide-btn" disabled={step === 0} onClick={() => { setStep(step - 1); setPlaying(false); }}>
-              <Icon name="arrow" size={14} /> Back
-            </button>
-            <button className="guide-btn primary" onClick={() => { if (last) { setStep(0); } else { setStep(step + 1); } setPlaying(false); }}>
-              {last ? "Start again" : step === 0 ? "Start" : "Next"} {!last && <Icon name="arrow" size={14} />}
-            </button>
-            <button className="guide-link" onClick={() => { if (last) setStep(0); setPlaying(!playing); }}>
-              {playing ? "Pause" : "Play automatically"}
-            </button>
-          </div>
+          <span className="mono kicker guide-count">{caption.n}</span>
+          <h3 key={caption.title} className="guide-title">{caption.title}</h3>
+          <p key={caption.text} className="guide-text">{caption.text}</p>
         </div>
       </Reveal>
 
       <div className="hero-world">
-        <div className="world-stage"><ChainWorld state={state} focus={current.focus} /></div>
+        <div className="world-stage">
+          <ChainWorld state={state} focus={done ? null : current?.focus ?? null} />
+          <div className="hold-dock">
+            {!done ? (
+              <>
+                <button className="hold-btn" aria-label="Hold to follow the number through the chain. Press and hold Space or Enter."
+                  onPointerDown={hold.begin} onPointerUp={hold.end} onPointerLeave={hold.end} onPointerCancel={hold.end}
+                  onKeyDown={(e) => { if ((e.key === " " || e.key === "Enter") && !e.repeat) { e.preventDefault(); hold.begin(); } }}
+                  onKeyUp={(e) => { if (e.key === " " || e.key === "Enter") hold.end(); }}>
+                  <svg viewBox="0 0 80 80" aria-hidden>
+                    <circle cx="40" cy="40" r="34" fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="2" />
+                    <motion.circle cx="40" cy="40" r="34" fill="none" stroke="#ff5a1f" strokeWidth="3" strokeLinecap="round"
+                      strokeDasharray="213.6" style={{ strokeDashoffset: dashOffset }} transform="rotate(-90 40 40)" />
+                  </svg>
+                  <span className="mono">HOLD</span>
+                </button>
+                <button className="text-link small" onClick={hold.finishNow}>Show the result</button>
+              </>
+            ) : (
+              <button className="text-link small" onClick={() => { hold.reset(); setDone(false); }}>Replay</button>
+            )}
+          </div>
+        </div>
       </div>
     </section>
   );

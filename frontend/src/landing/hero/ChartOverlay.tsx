@@ -30,7 +30,7 @@ export function ChartOverlay() {
       <motion.svg viewBox="0 0 100 100" preserveAspectRatio="none" className="chart-line"
         initial={{ clipPath: "inset(0 100% 0 0)" }} animate={{ clipPath: "inset(0 0% 0 0)" }}
         transition={{ duration: 2.6, delay: 0.7, ease: [0.4, 0, 0.2, 1] }}>
-        <path d={LINE} fill="none" stroke="#ffffff" strokeWidth="2.4" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        <path d={LINE} fill="none" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.6" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
       </motion.svg>
       {POINTS.map((p, i) => (
         <motion.div key={p.label} className="chart-point" style={{ left: `${p.x}%`, top: `${p.y}%` }}
@@ -39,7 +39,6 @@ export function ChartOverlay() {
           <span className="chart-tick" /><span className="chart-dot" />
         </motion.div>
       ))}
-      <span className="mono chart-note">Illustrative: synthetic demo figures</span>
     </div>
   );
 }

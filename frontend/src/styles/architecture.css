@@ -2,7 +2,7 @@
    The public architecture page: one scroll linked flow diagram. */
 
 .arch-main { padding: clamp(40px, 6vw, 80px) var(--gutter) 140px; max-width: 1100px; margin: 0 auto; }
-.arch-title { font-size: clamp(34px, 4.6vw, 64px); line-height: 1.04; margin: 12px 0 8px; }
+.arch-title { font-size: clamp(28px, 3.4vw, 48px); line-height: 1.04; margin: 12px 0 8px; }
 .arch-sub { font-size: 17px; }
 .arch-legend { display: flex; gap: 24px; margin: 22px 0 56px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); }
 .arch-legend i { display: inline-block; width: 26px; margin-right: 10px; vertical-align: middle; border-top: 2px solid var(--text-2); }
@@ -23,9 +23,9 @@
 .flow-text.to-left { text-align: right; align-items: flex-end; margin-left: auto; padding-right: 8px; }
 .flow-text.to-right { text-align: left; align-items: flex-start; padding-left: 8px; }
 .flow-n { font-size: 11px; color: var(--ember); letter-spacing: 0.14em; }
-.flow-text h3 { font-family: var(--font-serif); font-weight: 500; font-size: clamp(20px, 2vw, 27px); letter-spacing: -0.03em; line-height: 1.1; }
+.flow-text h3 { font-family: var(--font-serif); font-weight: 500; font-size: clamp(18px, 1.7vw, 23px); letter-spacing: -0.03em; line-height: 1.1; }
 .flow-text h3.hot { color: var(--ember); }
-.flow-text p { color: var(--text-2); font-size: 15px; line-height: 1.55; }
+.flow-text p { color: var(--text-2); font-size: 14px; line-height: 1.55; }
 .flow-text code { font-family: var(--font-mono); font-size: 11.5px; color: #d9a37f; }
 
 .flow-branch { display: flex; align-items: center; gap: 0; color: var(--text-2); }
@@ -36,7 +36,7 @@
 .flow-branch.planned i { border-top-style: dashed; border-color: var(--warn); }
 .flow-branch.planned span { border-style: dashed; border-color: rgba(184, 110, 0, 0.6); color: #f0b24d; }
 
-.arch-end { margin-top: 70px; text-align: center; font-size: clamp(20px, 2.2vw, 30px); color: var(--text-2); }
+.arch-end { margin-top: 70px; text-align: center; font-size: clamp(17px, 1.8vw, 24px); color: var(--text-2); }
 
 @media (max-width: 760px) {
   .flow-spine { left: 18px; }
