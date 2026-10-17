@@ -1,18 +1,15 @@
 // world/ChainWorld.tsx
-// The hero picture: a small isometric world of the supply chain.
+// The picture for the guided walkthrough: a small isometric supply
+// chain. Steel mill, bolt works, verifier tower and EU importer.
 //
-//   Steel mill  ->  Bolt works  ->  EU importer, with a verifier
-//   tower watching over the chain.
+// It has no controls of its own. The walkthrough (WorldScene) drives
+// it by changing a few numbers between 0 and 1, one per part of the
+// picture: how "lit" each building is, and how active each road is.
+// Lit means verified data has reached it. The picture just draws
+// whatever those numbers say, so the story always matches the step.
 //
-// "Heat" drives the look. At heat 0 the world is cold steel and the
-// carbon number is the punishing EU default. As heat rises to 1 the
-// windows, roads and data packets warm to ember, and the number falls
-// to the verified figure. The meaning: tempering makes the metal, and
-// the data, trustworthy.
-//
-// Every building is a real button (click or press Enter) that selects
-// it and shows details outside the picture, so nothing depends on
-// seeing the animation.
+// The buildings are plain boxes drawn with three shades each, in
+// isometric projection (see iso.ts).
 
 import { motion, useTransform } from "motion/react";
 import type { MotionValue } from "motion/react";
@@ -23,166 +20,134 @@ import { SvgReadout } from "./Readout";
 
 export type NodeKey = "mill" | "bolts" | "verifier" | "importer";
 
+/** The numbers the walkthrough controls. Each is 0 (off) to 1 (on) unless noted. */
+export interface WorldState {
+  mill: MotionValue<number>;
+  verifier: MotionValue<number>;
+  bolts: MotionValue<number>;
+  importer: MotionValue<number>;
+  roadA: MotionValue<number>;      // mill to bolt works
+  roadB: MotionValue<number>;      // bolt works to importer
+  boltsNumber: MotionValue<number>; // the bolt works' carbon number
+  saving: MotionValue<number>;      // importer saving, in percent
+}
+
 const STEEL: Tone = { top: "#4a5b6e", left: "#2a3644", right: "#1b242e" };
 const DARK: Tone = { top: "#364454", left: "#1f2a36", right: "#141b23" };
 const GLASS: Tone = { top: "#5d7186", left: "#33445a", right: "#222f40" };
 
-export const DEFAULT_SEE = 4.948;
-export const VERIFIED_SEE = 2.64;
+const COLD = "#2d3b4b";
+const HOT = "#ff7a3d";
 
-interface Props {
-  heat: MotionValue<number>;
-  selected: NodeKey;
-  tempered: boolean;
-  onSelect: (key: NodeKey) => void;
-}
+// Where each building stands, used for the focus outline.
+const FOOTPRINT: Record<NodeKey, [number, number, number, number]> = {
+  mill: [0.8, 4.6, 3, 2.8], bolts: [4.4, 3.7, 2.6, 2.2],
+  verifier: [1.2, 1.2, 1.3, 1.3], importer: [7.2, 0.6, 1.8, 1.8],
+};
 
-interface LabelProps {
-  gx: number; gy: number; gz: number; title: string;
-  value?: string;                       // fixed text
-  valueSource?: MotionValue<number>;    // or a live number
-  format?: (v: number) => string;
-  strong?: boolean;
-}
-
-function Label({ gx, gy, gz, title, value, valueSource, format, strong }: LabelProps) {
+function Label({
+  gx, gy, gz, title, value, source, format, strong,
+}: {
+  gx: number; gy: number; gz: number; title: string; value?: string;
+  source?: MotionValue<number>; format?: (v: number) => string; strong?: boolean;
+}) {
   const base = project(gx, gy, gz);
   const top = project(gx, gy, gz + 1.3);
-  const x = top.x - 58;
-  const y = top.y - 46;
+  const x = top.x - 58, y = top.y - 46;
   return (
     <g pointerEvents="none">
       <line x1={base.x} y1={base.y} x2={top.x} y2={top.y} stroke="#ffffff" strokeOpacity="0.4" strokeDasharray="2 3" />
       <rect x={x} y={y} width="116" height="46" fill="#0b0c0e" stroke="#ffffff" strokeOpacity="0.28" />
       <text x={x + 10} y={y + 17} className="svg-mono" fill="#a8a8a8" fontSize="9">{title}</text>
-      {valueSource && format ? (
-        <SvgReadout source={valueSource} format={format} x={x + 10} y={y + 38} className={strong ? "svg-serif big" : "svg-serif"} />
-      ) : (
-        <text x={x + 10} y={y + 38} className="svg-serif">{value}</text>
-      )}
+      {source && format
+        ? <SvgReadout source={source} format={format} x={x + 10} y={y + 38} className={strong ? "svg-serif big" : "svg-serif"} />
+        : <text x={x + 10} y={y + 38} className="svg-serif">{value}</text>}
     </g>
   );
 }
 
-export function ChainWorld({ heat, selected, tempered, onSelect }: Props) {
-  // Colours that blend from cold to ember as heat rises.
-  const windowColor = useTransform(heat, [0, 1], ["#2d3b4b", "#ff7a3d"]);
-  const roadColor = useTransform(heat, [0, 1], ["#5b6b7d", "#ff5a1f"]);
-  const glowColor = useTransform(heat, [0, 1], ["rgba(90,110,130,0)", "rgba(255,90,31,0.55)"]);
-  const seeValue = useTransform(heat, [0, 1], [DEFAULT_SEE, VERIFIED_SEE]);
-  const percent = useTransform(heat, [0, 1], [0, 47]);
+export function ChainWorld({ state, focus }: { state: WorldState; focus: NodeKey | null }) {
+  const win = (mv: MotionValue<number>) => useTransform(mv, [0, 1], [COLD, HOT]);
+  const millWin = win(state.mill), verWin = win(state.verifier), boltsWin = win(state.bolts), impWin = win(state.importer);
+  const roadAColor = useTransform(state.roadA, [0, 1], ["#5b6b7d", "#ff5a1f"]);
+  const roadBColor = useTransform(state.roadB, [0, 1], ["#5b6b7d", "#ff5a1f"]);
+  const ringColor = useTransform(state.verifier, [0, 1], ["#5b6b7d", "#ff5a1f"]);
+  const packetA = useTransform(state.roadA, [0.6, 1], [0, 1]);
+  const packetB = useTransform(state.roadB, [0.6, 1], [0, 1]);
+  const glow = useTransform(state.bolts, [0, 1], ["rgba(90,110,130,0)", "rgba(255,90,31,0.5)"]);
+  const verifiedTick = useTransform(state.verifier, [0.5, 1], [0, 1]);
 
   const diamond = toPoints([project(0, 0), project(10, 0), project(10, 10), project(0, 10)]);
-  const gridLines = Array.from({ length: 11 }, (_, i) => i);
+  const lines = Array.from({ length: 11 }, (_, i) => i);
   const roadOne = groundPath([[3.7, 6.1], [5.9, 6.1], [5.9, 5.0]]);
   const roadTwo = groundPath([[7.3, 4.0], [8.2, 4.0], [8.2, 2.8]]);
-  const roadThree = groundPath([[2.6, 3.6], [2.6, 2.2]]);
-  const roadFour = groundPath([[6.3, 3.2], [6.3, 1.4]]);
 
-  const select = (key: NodeKey) => ({
-    role: "button" as const,
-    tabIndex: 0,
-    "aria-label": `Select ${key}`,
-    "aria-pressed": selected === key,
-    onClick: () => onSelect(key),
-    onKeyDown: (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(key); }
-    },
-    className: `iso-node ${selected === key ? "is-selected" : ""}`,
-  });
-
-  const packet = (path: string, delay: number) => (
-    <motion.circle r="4.5" style={{ fill: roadColor, offsetPath: `path("${path}")` }}
+  const packet = (path: string, opacity: MotionValue<number>, color: MotionValue<string>) => (
+    <motion.circle r="4.5" style={{ fill: color, offsetPath: `path("${path}")`, opacity }}
       initial={{ offsetDistance: "0%" }} animate={{ offsetDistance: "100%" }}
-      transition={{ duration: 2.6, delay, repeat: Infinity, ease: "linear" }} />
+      transition={{ duration: 2.4, repeat: Infinity, ease: "linear" }} />
   );
 
+  const footprint = (key: NodeKey) => {
+    const [gx, gy, w, d] = FOOTPRINT[key];
+    const m = 0.3;
+    return toPoints([project(gx - m, gy - m), project(gx + w + m, gy - m), project(gx + w + m, gy + d + m), project(gx - m, gy + d + m)]);
+  };
+
   return (
-    <svg viewBox="0 -50 800 610" className="chain-world" role="group"
+    <svg viewBox="0 -50 800 610" className="chain-world" role="img"
       aria-label="Isometric supply chain: steel mill, bolt works, verifier tower and EU importer">
-      <defs>
-        <radialGradient id="ground-fade" cx="50%" cy="50%" r="60%">
-          <stop offset="0%" stopColor="#141a21" />
-          <stop offset="100%" stopColor="#08090a" />
-        </radialGradient>
-      </defs>
-
-      <g>
-        <polygon points={diamond} fill="url(#ground-fade)" stroke="#ffffff" strokeOpacity="0.14" />
-        {gridLines.map((i) => (
-          <g key={i} stroke="#ffffff" strokeOpacity="0.06">
-            <line x1={project(i, 0).x} y1={project(i, 0).y} x2={project(i, 10).x} y2={project(i, 10).y} />
-            <line x1={project(0, i).x} y1={project(0, i).y} x2={project(10, i).x} y2={project(10, i).y} />
-          </g>
-        ))}
-        <motion.ellipse cx={project(5, 5).x} cy={project(5, 5).y} rx="260" ry="120" style={{ fill: glowColor }} filter="blur(40px)" />
-
-        {[roadOne, roadTwo, roadThree, roadFour].map((d, i) => (
-          <motion.path key={i} d={d} fill="none" strokeWidth="3" style={{ stroke: roadColor }}
-            strokeDasharray={i > 1 ? "3 6" : "0"} opacity={i > 1 ? 0.6 : 1} />
-        ))}
-        {packet(roadOne, 0)}
-        {packet(roadTwo, 1.2)}
-        {tempered && packet(roadThree, 0.4)}
-        {tempered && packet(roadFour, 1.6)}
-
-        {/* Buildings are drawn back to front so nearer ones overlap farther ones. */}
-
-        {/* Verifier tower: tall and slim, its ring lights up when tempered. */}
-        <g {...select("verifier")}>
-          <IsoBox gx={1.2} gy={1.2} w={1.3} d={1.3} h={3.4} tone={DARK} glow={windowColor} columns={2} rows={5} />
-          <motion.ellipse cx={project(1.85, 1.85, 3.5).x} cy={project(1.85, 1.85, 3.5).y} rx="34" ry="16"
-            fill="none" strokeWidth="2" style={{ stroke: roadColor }} />
+      <polygon points={diamond} fill="#0d1114" stroke="#ffffff" strokeOpacity="0.14" />
+      {lines.map((i) => (
+        <g key={i} stroke="#ffffff" strokeOpacity="0.06">
+          <line x1={project(i, 0).x} y1={project(i, 0).y} x2={project(i, 10).x} y2={project(i, 10).y} />
+          <line x1={project(0, i).x} y1={project(0, i).y} x2={project(10, i).x} y2={project(10, i).y} />
         </g>
+      ))}
+      <motion.ellipse cx={project(5, 5).x} cy={project(5, 5).y} rx="260" ry="120" style={{ fill: glow }} filter="blur(40px)" />
 
-        {/* Steel mill: wide hall with two chimneys and smoke. */}
-        <g {...select("mill")}>
-          <IsoBox gx={0.8} gy={4.6} w={3} d={2.8} h={1.5} tone={STEEL} glow={windowColor} columns={4} rows={1} />
-          <IsoBox gx={1.1} gy={4.9} w={0.6} d={0.6} h={2.6} z={1.5} tone={DARK} />
-          <IsoBox gx={2.2} gy={4.9} w={0.6} d={0.6} h={2.0} z={1.5} tone={DARK} />
-          {[0, 1, 2].map((i) => (
-            <motion.circle key={i} cx={project(1.4, 5.2, 4.3).x} cy={project(1.4, 5.2, 4.3).y} r="7"
-              fill="#9aa7b4" initial={{ opacity: 0, y: 0, scale: 0.6 }}
-              animate={{ opacity: [0, 0.35, 0], y: -46, scale: 1.6 }}
-              transition={{ duration: 3.6, delay: i * 1.2, repeat: Infinity, ease: "easeOut" }} />
-          ))}
-        </g>
+      {focus && (
+        <motion.polygon key={focus} points={footprint(focus)} fill="none" stroke="#ff5a1f" strokeWidth="2" strokeDasharray="7 6"
+          initial={{ opacity: 0 }} animate={{ opacity: 1, strokeDashoffset: [0, -26] }}
+          transition={{ opacity: { duration: 0.3 }, strokeDashoffset: { duration: 1.2, repeat: Infinity, ease: "linear" } }} />
+      )}
 
-        {/* EU importer: a glass tower on the far side. */}
-        <g {...select("importer")}>
-          <IsoBox gx={7.2} gy={0.6} w={1.8} d={1.8} h={4.6} tone={GLASS} glow={windowColor} columns={3} rows={6} />
-          <IsoBox gx={7.55} gy={0.95} w={1.1} d={1.1} h={0.8} z={4.6} tone={DARK} />
-        </g>
+      <motion.path d={roadOne} fill="none" strokeWidth="3" style={{ stroke: roadAColor }} />
+      <motion.path d={roadTwo} fill="none" strokeWidth="3" style={{ stroke: roadBColor }} />
+      {packet(roadOne, packetA, roadAColor)}
+      {packet(roadTwo, packetB, roadBColor)}
 
-        {/* Bolt works: low sheds with a sawtooth roof, the hero of the story. */}
-        <g {...select("bolts")}>
-          <IsoBox gx={4.4} gy={3.7} w={2.6} d={2.2} h={1.1} tone={STEEL} glow={windowColor} columns={3} rows={1} />
-          <IsoBox gx={4.6} gy={3.9} w={0.7} d={1.8} h={0.5} z={1.1} tone={DARK} />
-          <IsoBox gx={5.5} gy={3.9} w={0.7} d={1.8} h={0.5} z={1.1} tone={DARK} />
-          <IsoBox gx={6.2} gy={3.9} w={0.6} d={1.8} h={0.5} z={1.1} tone={DARK} />
-        </g>
+      {/* Back to front so nearer buildings overlap farther ones. */}
+      <IsoBox gx={1.2} gy={1.2} w={1.3} d={1.3} h={3.4} tone={DARK} glow={verWin} columns={2} rows={5} />
+      <motion.ellipse cx={project(1.85, 1.85, 3.5).x} cy={project(1.85, 1.85, 3.5).y} rx="34" ry="16" fill="none" strokeWidth="2" style={{ stroke: ringColor }} />
 
-        {/* Labels sit on their own top layer so no building can hide them. */}
-        <Label gx={1.85} gy={1.85} gz={3.5} title="VERIFIER" value="signs opinions" />
-        <Label gx={2.3} gy={6.0} gz={1.6} title="STEEL MILL" value="2.40" />
-        <Label gx={8.1} gy={1.5} gz={4.7} title="EU IMPORTER" valueSource={percent}
-          format={(v) => (v < 1 ? "pays default" : `saves ${Math.round(v)}%`)} />
-        <Label gx={5.7} gy={4.8} gz={1.6} title="BOLT WORKS" valueSource={seeValue}
-          format={(v) => v.toFixed(2)} strong />
+      <IsoBox gx={0.8} gy={4.6} w={3} d={2.8} h={1.5} tone={STEEL} glow={millWin} columns={4} rows={1} />
+      <IsoBox gx={1.1} gy={4.9} w={0.6} d={0.6} h={2.6} z={1.5} tone={DARK} />
+      <IsoBox gx={2.2} gy={4.9} w={0.6} d={0.6} h={2.0} z={1.5} tone={DARK} />
+      {[0, 1, 2].map((i) => (
+        <motion.circle key={i} cx={project(1.4, 5.2, 4.3).x} cy={project(1.4, 5.2, 4.3).y} r="7" fill="#9aa7b4"
+          initial={{ opacity: 0, y: 0, scale: 0.6 }} animate={{ opacity: [0, 0.3, 0], y: -46, scale: 1.6 }}
+          transition={{ duration: 3.6, delay: i * 1.2, repeat: Infinity, ease: "easeOut" }} />
+      ))}
 
-        {tempered && (() => {
-          // Sits on the top right corner of the verifier's label box.
-          const corner = project(1.85, 1.85, 4.8);
-          const cx = corner.x + 58, cy = corner.y - 46;
-          return (
-            <motion.g initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 260, damping: 14 }}
-              style={{ transformOrigin: `${cx}px ${cy}px` }}>
-              <circle cx={cx} cy={cy} r="10" fill="#0f9d6b" />
-              <path d={`M ${cx - 5} ${cy} l3.5 3.5 6-7`} stroke="#fff" strokeWidth="2.4" fill="none" strokeLinecap="round" />
-            </motion.g>
-          );
-        })()}
-      </g>
+      <IsoBox gx={7.2} gy={0.6} w={1.8} d={1.8} h={4.6} tone={GLASS} glow={impWin} columns={3} rows={6} />
+      <IsoBox gx={7.55} gy={0.95} w={1.1} d={1.1} h={0.8} z={4.6} tone={DARK} />
+
+      <IsoBox gx={4.4} gy={3.7} w={2.6} d={2.2} h={1.1} tone={STEEL} glow={boltsWin} columns={3} rows={1} />
+      <IsoBox gx={4.6} gy={3.9} w={0.7} d={1.8} h={0.5} z={1.1} tone={DARK} />
+      <IsoBox gx={5.5} gy={3.9} w={0.7} d={1.8} h={0.5} z={1.1} tone={DARK} />
+      <IsoBox gx={6.2} gy={3.9} w={0.6} d={1.8} h={0.5} z={1.1} tone={DARK} />
+
+      {/* Labels sit on a top layer so no building can hide them. */}
+      <Label gx={1.85} gy={1.85} gz={3.5} title="VERIFIER" value="signs opinions" />
+      <Label gx={2.3} gy={6.0} gz={1.6} title="STEEL MILL" value="2.40 tCO2/t" />
+      <Label gx={8.1} gy={1.5} gz={4.7} title="EU IMPORTER" source={state.saving} format={(v) => (v < 1 ? "pays default" : `saves ${Math.round(v)}%`)} />
+      <Label gx={5.7} gy={4.8} gz={1.6} title="BOLT WORKS" source={state.boltsNumber} format={(v) => `${v.toFixed(2)} tCO2/t`} strong />
+
+      <motion.g style={{ opacity: verifiedTick }}>
+        <circle cx={project(1.85, 1.85, 4.8).x + 58} cy={project(1.85, 1.85, 4.8).y - 46} r="10" fill="#0f9d6b" />
+        <path d={`M ${project(1.85, 1.85, 4.8).x + 53} ${project(1.85, 1.85, 4.8).y - 46} l3.5 3.5 6-7`} stroke="#fff" strokeWidth="2.4" fill="none" strokeLinecap="round" />
+      </motion.g>
     </svg>
   );
 }

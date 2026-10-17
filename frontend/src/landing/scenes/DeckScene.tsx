@@ -21,17 +21,17 @@ import { ChainViz, DeliveryViz, EngineViz, EvidenceViz, LedgerViz, TrustViz } fr
 
 const SLIDES = [
   { n: "01", title: "Capture the evidence", tags: ["SHA256", "CONTENT ADDRESSED", "TAMPER CHECK"], viz: EvidenceViz,
-    text: "Bills, invoices and logs go into a vault, each stored under its fingerprint. Swap a single byte and the file no longer matches its name." },
-  { n: "02", title: "Confirm into a ledger that never forgets", tags: ["APPEND ONLY", "TWO CLOCKS", "TIME TRAVEL"], viz: LedgerViz,
-    text: "A person confirms every value before it counts. Corrections never overwrite: they add a row that supersedes the old one, so you can always see what the records said on any date." },
-  { n: "03", title: "Calculate with rules, not guesses", tags: ["DECIMAL MATHS", "VERSIONED METHOD", "FULL TRACE"], viz: EngineViz,
-    text: "A deterministic engine applies the methodology and records every step. No number is produced by a language model. Re-run it in five years and get the same answer." },
+    text: "Bills and logs are stored under their fingerprint. Change one byte and it no longer matches." },
+  { n: "02", title: "Confirm into a ledger", tags: ["APPEND ONLY", "TWO CLOCKS", "TIME TRAVEL"], viz: LedgerViz,
+    text: "A person confirms each value. Corrections add a row; nothing is overwritten." },
+  { n: "03", title: "Calculate with rules", tags: ["DECIMAL MATHS", "VERSIONED METHOD", "FULL TRACE"], viz: EngineViz,
+    text: "A deterministic engine applies the rules and records every step. No AI in the maths." },
   { n: "04", title: "Link the chain", tags: ["PRECURSORS", "STALE TRACKING", "NO CYCLES"], viz: ChainViz,
-    text: "A bolt maker points at its mill's verified statement. When the mill revises, everything downstream is flagged and rebuilt in dependency order." },
+    text: "A maker links to its mill's verified number. A revision flags everything downstream." },
   { n: "05", title: "Sign and verify", tags: ["ED25519", "VERIFIER OPINION", "AUDIT CHAIN"], viz: TrustViz,
-    text: "Suppliers sign. Accredited verifiers add a signed opinion. Every action lands in a hash chained log, so a rewritten history shows itself." },
-  { n: "06", title: "Share what matters, prove the rest", tags: ["SHARE GRANTS", "SELECTIVE DISCLOSURE", "VERIFICATION PACK"], viz: DeliveryViz,
-    text: "Importers see the result, its verification and the saving, never raw volumes. A downloadable pack lets any auditor check it independently, with no account." },
+    text: "Suppliers and verifiers sign. A hash chained log shows any tampering." },
+  { n: "06", title: "Share and prove", tags: ["SHARE GRANTS", "SELECTIVE DISCLOSURE", "VERIFICATION PACK"], viz: DeliveryViz,
+    text: "Importers see the result and saving, never raw volumes. Anyone can verify a pack." },
 ];
 
 export function DeckScene() {

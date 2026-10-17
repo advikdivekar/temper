@@ -8,9 +8,9 @@ import { motion } from "motion/react";
 import { Reveal } from "../../ui/Reveal";
 
 const PRINCIPLES = [
-  { n: "I", h: "AI reads.", p: "Models extract values from messy documents. A person confirms every value before it counts. No emissions number is ever produced by a model." },
-  { n: "II", h: "Rules calculate.", p: "Versioned, deterministic methodology packs, decimal arithmetic and unit checks. The same inputs always give the same result." },
-  { n: "III", h: "People sign.", p: "Suppliers and accredited verifiers sign with private keys. Change one figure and the signature fails." },
+  { n: "I", h: "AI reads.", p: "Models read documents. A person confirms every value." },
+  { n: "II", h: "Rules calculate.", p: "Versioned, deterministic rules. Same inputs, same result." },
+  { n: "III", h: "People sign.", p: "Suppliers and verifiers sign. Change a figure and it fails." },
 ];
 
 const TRACE = [

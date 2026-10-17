@@ -1,18 +1,14 @@
 // landing/LandingPage.tsx
-// The public front door, built as nine connected scenes:
-//   1 Hero (full screen heat field)   6 Technical explainer
-//   2 The supply chain (hold to temper) 7 Architecture
-//   3 Statement and facts              8 Principles
-//   4 The problem (default markup)     9 Enter the demo
-//   5 How it works (scroll slide deck)
-// plus a floating top nav, a floating bottom pill and a scene counter
-// that follow you down the page.
+// The public front door, built as connected scenes:
+//   1 Hero (factory skyline)        5 Technical explainer
+//   2 Follow one number (guided)    6 Principles
+//   3 Statement and facts           7 Enter the demo
+//   4 The problem, then How it works (scroll slide deck)
+// plus a floating top nav. The architecture has its own page.
 
 import { EnterProvider } from "./EnterContext";
-import { FloatingCta } from "./parts/FloatingCta";
 import { FloatingNav } from "./parts/FloatingNav";
 import { LogoStrip } from "./parts/LogoStrip";
-import { ArchScene } from "./scenes/ArchScene";
 import { DeckScene } from "./scenes/DeckScene";
 import { DefaultScene } from "./scenes/DefaultScene";
 import { EnterScene } from "./scenes/EnterScene";
@@ -36,12 +32,10 @@ export function LandingPage() {
           <DefaultScene />
           <DeckScene />
           <ExplainerScene />
-          <ArchScene />
           <PrinciplesScene />
           <EnterScene />
         </main>
         <SiteFooter />
-        <FloatingCta />
       </div>
     </EnterProvider>
   );

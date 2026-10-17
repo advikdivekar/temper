@@ -13,10 +13,9 @@ import { Wordmark } from "../../brand/Brand";
 import { useEnter } from "../EnterContext";
 
 const LINKS = [
-  { id: "world", label: "Chain" },
+  { id: "world", label: "The chain" },
   { id: "problem", label: "Problem" },
   { id: "how", label: "How it works" },
-  { id: "architecture", label: "Architecture" },
 ];
 
 function go(id: string) {
@@ -33,6 +32,7 @@ export function FloatingNav() {
         <nav className="fnav fnav-left" aria-label="Main">
           <div className="fnav-links">
             {LINKS.map((l) => (<button key={l.id} onClick={() => go(l.id)}>{l.label}</button>))}
+            <button onClick={() => navigate("/architecture")}>Architecture</button>
           </div>
           <button className="fnav-burger" aria-label="Menu" aria-expanded={open} onClick={() => setOpen(!open)}><span /><span /></button>
         </nav>
@@ -48,6 +48,7 @@ export function FloatingNav() {
         {open && (
           <motion.div className="fnav-panel" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
             {LINKS.map((l) => (<button key={l.id} onClick={() => { go(l.id); setOpen(false); }}>{l.label}</button>))}
+            <button onClick={() => navigate("/architecture")}>Architecture</button>
             <button onClick={() => navigate("/verify")}>Verify a pack</button>
           </motion.div>
         )}

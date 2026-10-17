@@ -85,7 +85,7 @@ export function ChainViz() {
           <motion.g key={n.t} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.18 }}>
             <rect x={n.x} y="52" width="100" height="66" fill="none" stroke="currentColor" strokeOpacity="0.4" />
             <text x={n.x + 10} y="78" fontSize="11" fill="currentColor" fontFamily="JetBrains Mono">{n.t}</text>
-            <text x={n.x + 10} y="104" fontSize="20" fill="currentColor" fontFamily="Instrument Serif">{n.v}</text>
+            <text x={n.x + 10} y="104" fontSize="20" fill="currentColor" fontFamily="Inter Tight">{n.v}</text>
           </motion.g>
         ))}
         <motion.circle r="5" fill="#ff5a1f" style={{ offsetPath: 'path("M118 85 H 175")' }} initial={{ offsetDistance: "0%" }} animate={{ offsetDistance: "100%" }} transition={{ delay: 1, duration: 0.8, repeat: 2 }} />
@@ -93,7 +93,7 @@ export function ChainViz() {
           <rect x="175" y="34" width="100" height="18" fill="#d92d20" />
           <text x="183" y="47" fontSize="10" fill="#fff" fontFamily="JetBrains Mono">STALE: recompute</text>
         </motion.g>
-        <motion.text x="185" y="104" fontSize="20" fill="#ff5a1f" fontFamily="Instrument Serif" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 4.2 }}>4.98</motion.text>
+        <motion.text x="185" y="104" fontSize="20" fill="#ff5a1f" fontFamily="Inter Tight" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 4.2 }}>4.98</motion.text>
       </svg>
       <p className="viz-note mono">mill revises Q2 / dependents flagged / rebuilt in order</p>
     </Frame>

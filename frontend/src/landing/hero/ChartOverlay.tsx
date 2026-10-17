@@ -17,7 +17,7 @@ import { motion } from "motion/react";
 // x and y are percentages of the box.
 const POINTS = [
   { x: 25, y: 42, label: "default applied", value: "4.95 tCO2/t" },
-  { x: 55, y: 66, label: "mill verified", value: "3.26 tCO2/t" },
+  { x: 55, y: 66, label: "60% of steel verified", value: "3.56 tCO2/t" },
   { x: 82, y: 80, label: "chain linked", value: "2.64 tCO2/t" },
 ];
 

@@ -32,11 +32,7 @@ export function DefaultScene() {
         <Reveal className="col-text">
           <span className="mono kicker">THE PROBLEM</span>
           <h2 className="serif h2">The default is built to hurt.</h2>
-          <p className="muted-light">
-            When a supplier cannot prove its emissions, the importer must use the
-            Commission's default value. It carries a mark-up that rises every year,
-            so the cost of having no data only grows.
-          </p>
+          <p className="muted-light">Without verified data, importers must use the EU default. It rises every year.</p>
           <div className="year-picker" role="tablist" aria-label="Choose a year">
             {YEARS.map((y, i) => (
               <button key={y.year} role="tab" aria-selected={index === i} className={index === i ? "on" : ""}
@@ -69,7 +65,7 @@ export function DefaultScene() {
             <line x1={60 + (VERIFIED / max) * 360} y1="6" x2={60 + (VERIFIED / max) * 360} y2="186" stroke="#0f9d6b" strokeDasharray="3 4" />
             <text x={66 + (VERIFIED / max) * 360} y="200" fill="#0f9d6b" fontSize="11" fontFamily="JetBrains Mono">illustrative verified figure 2.40</text>
           </svg>
-          <p className="caption mono">Base 4.28 and mark-ups from secondary reporting, verify against the Commission annex. Verified figure is demo data.</p>
+          <p className="caption mono">Illustrative. Base and mark-ups from secondary reporting.</p>
         </Reveal>
       </div>
     </section>

@@ -11,11 +11,11 @@ export function SiteFooter() {
         <div><Logo size={22} tone="light" /></div>
         <div className="mono foot-col">
           <span>SOURCES</span>
-          <p>GTRI via AlCircle, EY, CMS, DQS, EU Official Journal (Regulation 2023/956 and Implementing Regulation 2025/2547).</p>
+          <p>GTRI via AlCircle, EY, CMS, EU Official Journal.</p>
         </div>
         <div className="mono foot-col">
           <span>HONEST LIMITS</span>
-          <p>Demo data is synthetic. Default values and factors are unverified placeholders. Not a regulatory filing.</p>
+          <p>Demo data is synthetic. Reference values are unverified placeholders.</p>
         </div>
       </div>
       <div className="wordmark serif" aria-hidden>temper</div>

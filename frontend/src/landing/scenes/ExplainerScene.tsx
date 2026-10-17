@@ -23,9 +23,9 @@ const TONNES = 500;
 const PRICE = 80;
 
 const TABS = [
-  { id: "gap", title: "Find the gap", text: "With no verified upstream data, every tonne of steel is counted at the marked-up default, and so is every bolt made from it." },
-  { id: "link", title: "Link the chain", text: "As the mill's verified statement covers more of the steel you buy, the bolt maker's number falls along a straight line." },
-  { id: "ship", title: "Ship the number", text: "The importer sees the lower figure and its verification, and the saving against the default appears in euros." },
+  { id: "gap", title: "Find the gap", text: "Without verified upstream data, every tonne of steel counts at the default." },
+  { id: "link", title: "Link the chain", text: "More verified steel means a lower number." },
+  { id: "ship", title: "Ship the number", text: "The importer sees the lower number and the saving." },
 ];
 
 export function ExplainerScene() {
@@ -45,11 +45,8 @@ export function ExplainerScene() {
       <div className="split-2 wide">
         <Reveal className="col-text">
           <span className="mono kicker">TECHNICAL EXPLAINER</span>
-          <h2 className="serif h2">Why data across the whole chain matters.</h2>
-          <p className="muted-light">
-            A bolt's carbon is mostly the steel inside it. Only verified upstream
-            data can lower that part, so one verified mill helps every customer it sells to.
-          </p>
+          <h2 className="serif h2">Why chain data matters.</h2>
+
           <div className="tab-list" role="tablist" aria-label="Explainer steps">
             {TABS.map((t, i) => (
               <button key={t.id} role="tab" aria-selected={tab === i} className={tab === i ? "on" : ""} onClick={() => setTab(i)}>
@@ -88,7 +85,7 @@ export function ExplainerScene() {
             <div className={tab === 1 ? "hot" : ""}><span className="mono">YOUR NUMBER</span><b className="serif"><LiveNumber value={see} decimals={2} /></b></div>
             <div className={tab === 2 ? "hot" : ""}><span className="mono">IMPORTER SAVES</span><b className="serif"><LiveNumber value={saving} prefix="€" /></b></div>
           </div>
-          <p className="caption mono">Synthetic figures, 500 t imported at €80 per certificate, before the free allocation adjustment. Not measured data.</p>
+          <p className="caption mono">Synthetic figures. 500 t at €80. Illustration only.</p>
         </Reveal>
       </div>
     </section>

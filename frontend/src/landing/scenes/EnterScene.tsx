@@ -8,10 +8,10 @@ import { Icon } from "../../ui/Icons";
 import { useEnter } from "../EnterContext";
 
 const LOOKS: Record<string, { label: string; line: string }> = {
-  mill: { label: "UPSTREAM", line: "Publish a verified number once and share it with every customer." },
-  bolts: { label: "DOWNSTREAM SME", line: "Turn bills and logs into a statement your EU buyer accepts." },
-  verifier: { label: "VERIFIER", line: "Review evidence, check the trace, sign an opinion." },
-  importer: { label: "EU IMPORTER", line: "See verified suppliers and what each saves you." },
+  mill: { label: "UPSTREAM", line: "Publish a verified number once." },
+  bolts: { label: "DOWNSTREAM SME", line: "Turn bills into a statement." },
+  verifier: { label: "VERIFIER", line: "Check the evidence and sign." },
+  importer: { label: "EU IMPORTER", line: "See verified suppliers and savings." },
 };
 
 export function EnterScene() {
@@ -21,7 +21,7 @@ export function EnterScene() {
       <Reveal>
         <span className="mono kicker">LIVE DEMO</span>
         <h2 className="serif h2">Step into the supply chain.</h2>
-        <p className="muted-light">Pick a role. No password. Follow the chain from top to bottom: mill, verifier, bolt works, importer.</p>
+        <p className="muted-light">Pick a role. No password.</p>
       </Reveal>
       <ul className="enter-list">
         {personas.map((p, i) => (

@@ -30,7 +30,7 @@
   --bad-soft: #fdeceb;
 
   --font-sans: "Inter", system-ui, sans-serif;
-  --font-serif: "Instrument Serif", Georgia, serif;
+  --font-serif: "Inter Tight", "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   --radius: 4px;

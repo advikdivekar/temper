@@ -1,89 +1,111 @@
 // landing/scenes/WorldScene.tsx
-// Scene 2: an explorable world. A small isometric supply chain that
-// you can touch. Hold the ingot at the centre to "temper" the chain,
-// which turns the world from cold steel to ember and drops the carbon
-// number from the EU default to the verified figure.
+// Scene 2: a guided, step by step walkthrough of ONE number as it
+// moves through a supply chain. Five steps, always in the same order,
+// with Back and Next, a dot for each step, and an optional Play that
+// advances on its own.
 //
-// Fallbacks so nobody is stuck:
-//   * Space or Enter held on the button works like a pointer hold
-//   * "Temper instantly" completes it with one click
-//   * Each building is selectable and explained in plain text
+// Why a sequence: the idea is easy to lose when everything moves at
+// once. Here, each step changes one thing in the picture, outlines the
+// building it is about, and says in a sentence what is happening.
+//
+// How it works: the step number picks a row from STEPS. Each row
+// lists target values (0 to 1) for the parts of the picture, and we
+// animate the picture's values toward them. The picture never decides
+// anything itself.
 
-import { motion, useTransform } from "motion/react";
-import { useState } from "react";
+import { animate, useMotionValue } from "motion/react";
+import { useEffect, useState } from "react";
 import { Reveal } from "../../ui/Reveal";
-import { Ticker } from "../parts/Ticker";
+import { Icon } from "../../ui/Icons";
 import { ChainWorld } from "../world/ChainWorld";
-import type { NodeKey } from "../world/ChainWorld";
-import { useHold } from "../world/useHold";
+import type { NodeKey, WorldState } from "../world/ChainWorld";
 
-const NODE_INFO: Record<NodeKey, { name: string; role: string; text: string }> = {
-  mill: { name: "Steel Mill", role: "Upstream supplier", text: "Builds one signed, verified statement and shares it with every customer, instead of answering the same data request again and again." },
-  bolts: { name: "Bolt Works", role: "Downstream SME", text: "Links its steel to the mill's verified number. Until that number exists, the EU default applies and the buyer pays for the gap." },
-  verifier: { name: "Verifier", role: "Accredited third party", text: "Drills from every figure to its evidence and the exact calculation, then signs an opinion. Only verified data counts as actual." },
-  importer: { name: "EU Importer", role: "Authorised declarant", text: "Sees the result and its verification, never the raw plant data, and what each supplier saves against the penalty default." },
-};
+interface Targets {
+  mill: number; verifier: number; bolts: number; importer: number;
+  roadA: number; roadB: number; boltsNumber: number; saving: number;
+}
+
+const STEPS: { focus: NodeKey | null; title: string; text: string; to: Targets }[] = [
+  { focus: "bolts", title: "Today, the default applies",
+    text: "The bolt works buys steel from a mill with no verified data. So the EU default is used, and the importer pays for it.",
+    to: { mill: 0, verifier: 0, bolts: 0, importer: 0, roadA: 0, roadB: 0, boltsNumber: 4.95, saving: 0 } },
+  { focus: "mill", title: "The mill records its data",
+    text: "It uploads its bills and confirms its fuel use. The engine calculates 2.40 tCO2 per tonne of steel.",
+    to: { mill: 1, verifier: 0, bolts: 0, importer: 0, roadA: 0, roadB: 0, boltsNumber: 4.95, saving: 0 } },
+  { focus: "verifier", title: "A verifier signs it off",
+    text: "They check the evidence and the calculation, then sign. Now the mill's number counts as verified.",
+    to: { mill: 1, verifier: 1, bolts: 0, importer: 0, roadA: 0, roadB: 0, boltsNumber: 4.95, saving: 0 } },
+  { focus: "bolts", title: "The bolt works links to it",
+    text: "Its steel now carries the verified number instead of the default, so its own figure falls from 4.95 to 2.64.",
+    to: { mill: 1, verifier: 1, bolts: 1, importer: 0, roadA: 1, roadB: 0, boltsNumber: 2.64, saving: 0 } },
+  { focus: "importer", title: "The importer sees the saving",
+    text: "It receives 2.64 with proof of who signed it. That is 47% below the default it would have paid.",
+    to: { mill: 1, verifier: 1, bolts: 1, importer: 1, roadA: 1, roadB: 1, boltsNumber: 2.64, saving: 47 } },
+];
 
 export function WorldScene() {
-  const [tempered, setTempered] = useState(false);
-  const [selected, setSelected] = useState<NodeKey>("bolts");
-  const hold = useHold({ holdMs: 1700, drainMs: 900, onComplete: () => setTempered(true) });
-  // How much of the progress ring is still empty (SVG dash offset).
-  const dashOffset = useTransform(hold.progress, (p) => (1 - p) * 213.6);
-  const info = NODE_INFO[selected];
+  const [step, setStep] = useState(0);
+  const [playing, setPlaying] = useState(false);
+
+  const state: WorldState = {
+    mill: useMotionValue(0), verifier: useMotionValue(0), bolts: useMotionValue(0), importer: useMotionValue(0),
+    roadA: useMotionValue(0), roadB: useMotionValue(0), boltsNumber: useMotionValue(4.95), saving: useMotionValue(0),
+  };
+
+  // Move the picture toward the current step's targets.
+  useEffect(() => {
+    const target = STEPS[step].to;
+    const moves = (Object.keys(target) as (keyof Targets)[]).map((key) =>
+      animate(state[key], target[key], { duration: 1.1, ease: [0.22, 1, 0.36, 1] }));
+    return () => moves.forEach((m) => m.stop());
+  }, [step]);
+
+  // Optional autoplay: advance every few seconds, stop at the end.
+  useEffect(() => {
+    if (!playing) return;
+    if (step >= STEPS.length - 1) { setPlaying(false); return; }
+    const timer = setTimeout(() => setStep((s) => s + 1), 4800);
+    return () => clearTimeout(timer);
+  }, [playing, step]);
+
+  const current = STEPS[step];
+  const last = step === STEPS.length - 1;
 
   return (
     <section id="world" className="world-scene" data-scene="2">
       <Reveal className="world-copy">
         <span className="mono kicker">THE SUPPLY CHAIN</span>
-        <h2 className="serif h2">Hold the ingot.<br /><em className="ember-text">Watch the chain temper.</em></h2>
-        <p className="muted-light">A bolt's carbon is mostly the steel inside it. Until the mill's number is verified, everyone downstream is stuck with the default. Press and hold, and see what changes when the data is real.</p>
+        <h2 className="serif h2">Follow one number.</h2>
+
+        <div className="guide" role="group" aria-label="Walkthrough">
+          <span className="mono kicker guide-count">STEP {step + 1} OF {STEPS.length}</span>
+          <h3 key={step + "t"} className="guide-title">{current.title}</h3>
+          <p key={step + "p"} className="guide-text">{current.text}</p>
+
+          <div className="guide-dots">
+            {STEPS.map((s, i) => (
+              <button key={s.title} className={i === step ? "on" : i < step ? "past" : ""} aria-label={`Go to step ${i + 1}: ${s.title}`}
+                onClick={() => { setStep(i); setPlaying(false); }} />
+            ))}
+          </div>
+
+          <div className="guide-controls">
+            <button className="guide-btn" disabled={step === 0} onClick={() => { setStep(step - 1); setPlaying(false); }}>
+              <Icon name="arrow" size={14} /> Back
+            </button>
+            <button className="guide-btn primary" onClick={() => { if (last) { setStep(0); } else { setStep(step + 1); } setPlaying(false); }}>
+              {last ? "Start again" : step === 0 ? "Start" : "Next"} {!last && <Icon name="arrow" size={14} />}
+            </button>
+            <button className="guide-link" onClick={() => { if (last) setStep(0); setPlaying(!playing); }}>
+              {playing ? "Pause" : "Play automatically"}
+            </button>
+          </div>
+        </div>
       </Reveal>
 
       <div className="hero-world">
-        <div className="world-stage">
-          <ChainWorld heat={hold.progress} selected={selected} tempered={tempered} onSelect={setSelected} />
-          <div className="hold-dock">
-            {!tempered ? (
-              <>
-                <button className="hold-btn" aria-label="Hold to temper the supply chain. Press and hold Space or Enter."
-                  onPointerDown={hold.begin} onPointerUp={hold.end} onPointerLeave={hold.end} onPointerCancel={hold.end}
-                  onKeyDown={(e) => { if ((e.key === " " || e.key === "Enter") && !e.repeat) { e.preventDefault(); hold.begin(); } }}
-                  onKeyUp={(e) => { if (e.key === " " || e.key === "Enter") hold.end(); }}>
-                  <svg viewBox="0 0 80 80" aria-hidden>
-                    <circle cx="40" cy="40" r="34" fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="2" />
-                    <motion.circle cx="40" cy="40" r="34" fill="none" stroke="#ff5a1f" strokeWidth="3" strokeLinecap="round"
-                      strokeDasharray="213.6" style={{ strokeDashoffset: dashOffset }} transform="rotate(-90 40 40)" />
-                  </svg>
-                  <span className="mono">HOLD</span>
-                </button>
-                <span className="mono hold-hint">Hold to temper the chain</span>
-                <button className="text-link small" onClick={hold.finishNow}>Temper instantly</button>
-              </>
-            ) : (
-              <motion.div className="tempered-note" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-                <span className="mono">TEMPERED</span>
-                <p>The chain now uses verified data. Default 4.95 became 2.64.</p>
-                <button className="text-link small" onClick={() => { hold.reset(); setTempered(false); }}>Replay</button>
-              </motion.div>
-            )}
-          </div>
-        </div>
-
-        <div className="node-panel" aria-live="polite">
-          <div className="node-tabs" role="tablist" aria-label="Explore the supply chain">
-            {(Object.keys(NODE_INFO) as NodeKey[]).map((key) => (
-              <button key={key} role="tab" aria-selected={selected === key} className={selected === key ? "on" : ""}
-                onClick={() => setSelected(key)}>{NODE_INFO[key].name}</button>
-            ))}
-          </div>
-          <motion.div key={selected} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
-            <span className="mono kicker">{info.role}</span>
-            <p>{info.text}</p>
-          </motion.div>
-        </div>
+        <div className="world-stage"><ChainWorld state={state} focus={current.focus} /></div>
       </div>
-      <Ticker />
     </section>
   );
 }

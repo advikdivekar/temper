@@ -12,10 +12,10 @@ import { Reveal } from "../../ui/Reveal";
 const Tag = ({ children }: { children: React.ReactNode }) => <span className="tag">{children}</span>;
 
 const FACTS = [
-  { v: 35.1, d: 1, s: "%", label: "fall in India's iron and steel exports to the EU in FY25", src: "GTRI" },
-  { v: 2027, d: 0, s: "", label: "year certificate sales begin for the carbon in imported goods", src: "EU CBAM", plain: true },
-  { v: 30, d: 0, s: "%", label: "default value mark-up from 2028. Real data is the way out", src: "Commission" },
-  { v: 50, d: 0, s: " t", label: "yearly import threshold below which importers are exempt", src: "EU CBAM" },
+  { v: 35.1, d: 1, s: "%", label: "fall in India's steel exports to the EU, FY25", src: "GTRI" },
+  { v: 2027, d: 0, s: "", label: "certificate sales begin", src: "EU CBAM", plain: true },
+  { v: 30, d: 0, s: "%", label: "default mark-up by 2028", src: "Commission" },
+  { v: 50, d: 0, s: " t", label: "yearly import exemption", src: "EU CBAM" },
 ];
 
 export function StatementScene() {
@@ -23,11 +23,8 @@ export function StatementScene() {
     <section className="paper-scene" data-scene="3">
       <Reveal>
         <p className="statement mono">
-          EU importers now pay for the carbon inside <Tag>STEEL</Tag>, <Tag>ALUMINIUM</Tag> and
-          the <Tag>FASTENERS</Tag> made from them. Without verified data from the
-          factory they must use the <Tag>EU DEFAULT</Tag>, set high on purpose. Temper
-          turns <Tag>BILLS</Tag> and <Tag>LOGS</Tag> into <Tag>SIGNED STATEMENTS</Tag> that
-          travel with the goods.
+          EU importers now pay for the carbon in <Tag>STEEL</Tag>, <Tag>ALUMINIUM</Tag> and <Tag>FASTENERS</Tag>.
+          Without verified data they pay the <Tag>EU DEFAULT</Tag>. Temper turns <Tag>BILLS</Tag> into <Tag>SIGNED STATEMENTS</Tag>.
         </p>
       </Reveal>
       <div className="facts">

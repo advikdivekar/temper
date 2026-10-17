@@ -10,7 +10,7 @@ import { motion } from "motion/react";
 import { Link } from "react-router-dom";
 import { Cta } from "../parts/Cta";
 import { ChartOverlay } from "../hero/ChartOverlay";
-import { SkyField } from "../hero/SkyField";
+import { FactoryField } from "../hero/FactoryField";
 import { useEnter } from "../EnterContext";
 
 export function HeroScene() {
@@ -20,7 +20,7 @@ export function HeroScene() {
   return (
     <section className="hero-sky" data-scene="1">
       <div className="sky-matrix" aria-hidden />
-      <SkyField />
+      <FactoryField />
       <ChartOverlay />
 
       <div className="hero-center">
@@ -31,9 +31,7 @@ export function HeroScene() {
           Carbon data your<br />buyers can trust
         </motion.h1>
         <motion.p className="hero-sub" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
-          Temper turns a factory's bills and logs into signed, verifiable emissions
-          statements, linked from mill to maker to importer, so nobody pays the
-          punishing default.
+          Signed, verifiable emissions data, from mill to maker to importer.
         </motion.p>
         <motion.div className="hero-cta-row" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.75 }}>
           <button className="pill-cta" disabled={personas.length === 0} onClick={() => go("enter")}>Enter the demo</button>
