@@ -10,3 +10,5 @@ ml/data/raw/
 *.gguf
 *.safetensors
 *.egg-info/
+*.db
+storage/
