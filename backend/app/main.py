@@ -20,8 +20,11 @@ CONCEPTS IN THIS FILE
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+import os
+
 from app.api import (
-    routes_auth, routes_plant, routes_statements, routes_trust,
+    routes_auth, routes_demo, routes_plant, routes_statements,
+    routes_trust,
 )
 from app.config import Settings, load_settings
 from app.database import make_session_factory
@@ -47,5 +50,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(routes_plant.router)
     app.include_router(routes_statements.router)
     app.include_router(routes_trust.router)
+    if os.getenv("DEMO_MODE", "1") == "1":
+        app.include_router(routes_demo.router)
     return app
 

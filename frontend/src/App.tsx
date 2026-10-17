@@ -5,7 +5,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./auth/AuthContext";
 import { Layout } from "./components/Layout";
-import { LoginPage } from "./pages/LoginPage";
+import { LandingPage } from "./pages/LandingPage";
 import { PlantPage } from "./pages/PlantPage";
 import { StatementDetailPage } from "./pages/StatementDetailPage";
 import { StatementsPage } from "./pages/StatementsPage";
@@ -16,13 +16,13 @@ export function App() {
 
   return (
     <Routes>
-      <Route path="/login" element={me ? <Navigate to="/statements" /> : <LoginPage />} />
-      <Route element={me ? <Layout /> : <Navigate to="/login" />}>
+      <Route path="/" element={<LandingPage />} />
+      <Route element={me ? <Layout /> : <Navigate to="/" />}>
         <Route path="/plant" element={<PlantPage />} />
         <Route path="/statements" element={<StatementsPage />} />
         <Route path="/statements/:id" element={<StatementDetailPage />} />
       </Route>
-      <Route path="*" element={<Navigate to="/statements" />} />
+      <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
 }

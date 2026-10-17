@@ -11,7 +11,7 @@ export function Layout() {
   return (
     <>
       <header className="topbar">
-        <strong>Temper</strong>
+        <Link to="/statements"><strong>Temper</strong></Link>
         <nav>
           {me.role === "supplier" && <Link to="/plant">My plant</Link>}
           <Link to="/statements">
@@ -20,7 +20,7 @@ export function Layout() {
         </nav>
         <span className="who">
           {me.organization_name} ({me.role})
-          <button onClick={signOut}>Sign out</button>
+          <button onClick={() => { signOut(); window.location.href = "/"; }}>Switch persona</button>
         </span>
       </header>
       <main>
