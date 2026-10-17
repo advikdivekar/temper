@@ -20,7 +20,9 @@ from app.models import Installation, Organization, Statement
 from app.services import trust
 from app.services.evidence_helper import make_evidence
 from app.services.reference_data import load_reference_data
-from app.services.statements import build_statement, recompute_stale
+from app.services.statements import (
+    build_statement, default_see, recompute_stale,
+)
 from app.config import ROOT
 
 START, END = date(2026, 1, 1), date(2026, 12, 31)
@@ -76,6 +78,8 @@ def test_chain_stale_and_recompute(world):
     fab_stmt = build_statement(session, fab, START, END, link, METHOD, 1)
     # 10 t coal x 2.4 = 24, steel 100 t x 2.4 actual = 240, over 100 t.
     assert fab_stmt.see_by_product["bolts"] == "2.64000"
+    # On defaults it would be (24 + 100 x 4.28 x 1.10) / 100.
+    assert default_see(session, fab_stmt)["bolts"] == "4.94800"
 
     # Mill corrects its coal use and builds a new version.
     first_coal = [

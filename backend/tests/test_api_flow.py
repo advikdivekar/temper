@@ -97,3 +97,28 @@ def test_role_is_enforced(tmp_path):
                            headers=importer)
     assert response.status_code == 403
     assert client.get("/installations").status_code == 401
+
+
+def test_savings_versus_default(tmp_path):
+    client = make_client(tmp_path)
+    supplier, _ = register(client, "Bolts Ltd", "supplier", "s@x.com")
+    inst = client.post("/installations", json={"name": "P"},
+                       headers=supplier).json()["id"]
+    ev = client.post("/evidence", headers=supplier, files={
+        "file": ("b.txt", io.BytesIO(b"b"), "text/plain")}).json()["id"]
+    for kind, name, amount in (("fuel", "coal", "10"),
+                               ("output", "bolts", "100")):
+        client.post("/records", headers=supplier, json={
+            "installation_id": inst, "kind": kind, "name": name,
+            "amount": amount, "unit": "tonne", "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31", "evidence_id": ev})
+    sid = client.post("/statements", headers=supplier, json={
+        "installation_id": inst, "period_start": "2026-01-01",
+        "period_end": "2026-12-31",
+        "precursors": [{"material_name": "steel", "tonnes": "100",
+                        "cn_code": "7208"}]}).json()["id"]
+    result = client.get(
+        f"/statements/{sid}/savings?product=bolts&tonnes=50"
+        "&certificate_price_eur=80", headers=supplier).json()
+    # Nothing verified upstream, so actual equals default: no saving.
+    assert result["saving_eur"] == 0

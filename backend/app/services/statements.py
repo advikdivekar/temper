@@ -88,15 +88,33 @@ def _records_in_period(session, installation_id, start, end):
     ]
 
 
-def build_statement(
+class Prepared:
+    """Everything gathered before the engine runs."""
+
+    def __init__(self, plant, methodology, records, factor_rows,
+                 ref_hashes, refs):
+        self.plant = plant
+        self.methodology = methodology
+        self.records = records
+        self.factor_rows = factor_rows
+        self.ref_hashes = ref_hashes
+        self.refs = refs
+
+
+def prepare(
     session: Session,
     installation: Installation,
     period_start: date,
     period_end: date,
     precursor_inputs: list[dict],
     methodology_key: str,
-    actor_user_id: int | None,
-) -> Statement:
+    force_defaults: bool = False,
+) -> Prepared:
+    """Gather records and resolve precursors into engine inputs.
+
+    force_defaults ignores supplier statements and uses defaults for
+    every precursor. It answers "what would the default have been?".
+    """
     methodology = METHODOLOGIES[methodology_key]
     records = _records_in_period(
         session, installation.id, period_start, period_end
@@ -138,7 +156,7 @@ def build_statement(
             session, installation.id, upstream_id
         ):
             raise ValueError("This precursor link would create a cycle")
-        if upstream_id:
+        if upstream_id and not force_defaults:
             upstream = session.get(Statement, upstream_id)
             product = item["upstream_product"]
             if upstream and is_verified(session, upstream):
@@ -172,6 +190,39 @@ def build_statement(
         precursors=lots,
         products=products,
     )
+    return Prepared(plant, methodology, records, factor_rows,
+                    ref_hashes, refs)
+
+
+def default_see(session: Session, statement: Statement) -> dict:
+    """SEE per product if every precursor had used the default value."""
+    installation = session.get(Installation, statement.installation_id)
+    inputs = recompute_inputs(session, statement)
+    prepared = prepare(
+        session, installation, statement.period_start,
+        statement.period_end, inputs, statement.methodology,
+        force_defaults=True,
+    )
+    result = calculate_statement(prepared.plant, prepared.methodology)
+    return {k: str(v) for k, v in result.see_by_product.items()}
+
+
+def build_statement(
+    session: Session,
+    installation: Installation,
+    period_start: date,
+    period_end: date,
+    precursor_inputs: list[dict],
+    methodology_key: str,
+    actor_user_id: int | None,
+) -> Statement:
+    prepared = prepare(
+        session, installation, period_start, period_end,
+        precursor_inputs, methodology_key,
+    )
+    plant, methodology = prepared.plant, prepared.methodology
+    records, factor_rows = prepared.records, prepared.factor_rows
+    ref_hashes, refs = prepared.ref_hashes, prepared.refs
     result = calculate_statement(plant, methodology)
 
     inputs_hash = canonical_hash(

@@ -24,7 +24,8 @@ from app.models import (
 )
 from app.services import trust
 from app.services.statements import (
-    METHODOLOGIES, build_statement, is_verified, recompute_stale,
+    METHODOLOGIES, build_statement, default_see, is_verified,
+    recompute_stale,
 )
 
 router = APIRouter(prefix="/statements", tags=["statements"])
@@ -173,3 +174,31 @@ def recompute(
         == caller.org.id
     ]
     return [summary(session, s) for s in mine]
+
+
+@router.get("/{statement_id}/savings")
+def savings(
+    statement_id: int,
+    product: str,
+    tonnes: float,
+    certificate_price_eur: float,
+    caller: Caller = Depends(get_caller),
+    session: Session = Depends(get_session),
+):
+    """What an importer saves versus default values.
+
+    saving = (default SEE minus actual SEE) x tonnes x certificate price
+    This ignores the free allocation adjustment, so it is an upper
+    bound until that factor is added.
+    """
+    statement = load_readable(session, caller, statement_id)
+    actual = float(statement.see_by_product[product])
+    default = float(default_see(session, statement)[product])
+    difference = max(default - actual, 0.0)
+    return {
+        "actual_see": actual,
+        "default_see": default,
+        "difference_per_tonne": difference,
+        "saving_eur": round(difference * tonnes * certificate_price_eur, 2),
+        "note": "Before free allocation adjustment.",
+    }
