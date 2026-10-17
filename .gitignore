@@ -9,3 +9,4 @@ node_modules/
 ml/data/raw/
 *.gguf
 *.safetensors
+*.egg-info/

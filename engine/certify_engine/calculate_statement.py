@@ -82,6 +82,8 @@ def calculate_statement(plant: PlantData) -> StatementResult:
     trace.append(f"Precursor emissions: {carried.value} tCO2")
 
     total = direct + indirect + carried
+    # Round to six places so allocation can split it exactly.
+    total = Quantity(total.value.quantize(Decimal("0.000001")), "tco2")
     trace.append(f"Plant total: {total.value} tCO2")
 
     weights = {p.name: p.tonnes_made for p in plant.products}

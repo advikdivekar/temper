@@ -1,8 +1,0 @@
-Metadata-Version: 2.4
-Name: certify_engine
-Version: 0.1.0
-Summary: Deterministic CBAM emissions calculation core
-Requires-Python: >=3.11
-Provides-Extra: dev
-Requires-Dist: pytest; extra == "dev"
-Requires-Dist: hypothesis; extra == "dev"
