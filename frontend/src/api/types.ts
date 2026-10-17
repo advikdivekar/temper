@@ -47,6 +47,51 @@ export interface Precursor {
   uses_default: boolean;
 }
 
+export interface TimelineEvent {
+  event: string;
+  at: string;
+  by: string;
+  revoked?: boolean;
+  grant_id?: number;
+}
+
+export interface Lot {
+  material: string;
+  tonnes: string;
+  intensity: string;
+  basis: "actual" | "default";
+  tco2: string;
+}
+
+export interface Breakdown {
+  direct: string;
+  indirect: string;
+  precursor: string;
+  lots: Lot[];
+}
+
+export interface ChainNode {
+  id: number;
+  supplier: string;
+  see_by_product: Record<string, string>;
+  status: string;
+  verified: boolean;
+}
+
+export interface ChainEdge {
+  from: number | null;
+  to: number;
+  material: string;
+  tonnes: string;
+  uses_default: boolean;
+}
+
+export interface Chain {
+  root: number;
+  nodes: ChainNode[];
+  edges: ChainEdge[];
+}
+
 export interface Statement {
   id: number;
   supplier: string;
@@ -57,12 +102,16 @@ export interface Statement {
   status: "draft" | "signed" | "stale";
   verified: boolean;
   see_by_product: Record<string, string>;
+  default_see_by_product: Record<string, string>;
+  created_at: string;
   content_hash: string;
   signature_valid: boolean;
   opinions: Opinion[];
   // Present only for the owner and verifiers (selective disclosure).
   total_tco2?: string;
   trace?: string[];
+  breakdown?: Breakdown;
+  timeline?: TimelineEvent[];
   precursors?: Precursor[];
   supersedes_id?: number | null;
   inputs_hash?: string;

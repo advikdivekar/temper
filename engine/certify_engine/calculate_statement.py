@@ -74,6 +74,9 @@ class StatementResult:
     total_tco2: Decimal
     see_by_product: dict[str, Decimal]
     trace: list[str]
+    # Plain numbers for screens: direct, indirect, precursor totals,
+    # plus one entry per precursor lot.
+    breakdown: dict
 
 
 def round_see(value: Decimal, decimals: int) -> Decimal:
@@ -121,9 +124,28 @@ def calculate_statement(
             f"{product.tonnes_made} t gives {see} tCO2 per tonne"
         )
 
+    def six(value: Decimal) -> str:
+        return str(value.quantize(Decimal("0.000001")))
+
+    breakdown = {
+        "direct": six(direct.value),
+        "indirect": six(indirect.value),
+        "precursor": six(carried.value),
+        "lots": [
+            {
+                "material": lot.material,
+                "tonnes": str(lot.tonnes),
+                "intensity": str(lot.intensity),
+                "basis": lot.basis,
+                "tco2": six(lot.emissions.value),
+            }
+            for lot in lots
+        ],
+    }
     return StatementResult(
         methodology=f"{methodology.name}:{methodology.version}",
         total_tco2=total.value,
         see_by_product=see_by_product,
         trace=trace,
+        breakdown=breakdown,
     )

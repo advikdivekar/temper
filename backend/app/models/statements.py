@@ -42,12 +42,14 @@ class Statement(Base):
     total_tco2: Mapped[Decimal] = mapped_column(Numeric(20, 6))
     see_by_product: Mapped[dict] = mapped_column(JSON)
     trace: Mapped[list] = mapped_column(JSON)
+    breakdown: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime]
     supersedes_id: Mapped[int | None] = mapped_column(
         ForeignKey("statement.id"), default=None
     )
     content_hash: Mapped[str | None] = mapped_column(String(64), default=None)
     signature: Mapped[str | None] = mapped_column(String(200), default=None)
+    signed_at: Mapped[datetime | None] = mapped_column(default=None)
 
 
 class PrecursorRef(Base):

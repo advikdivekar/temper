@@ -1,144 +1,194 @@
 // pages/PlantPage.tsx
-// Supplier workspace: describe the plant, upload evidence, enter
-// confirmed records, then build an emissions statement.
+// The supplier's workspace. It guides four steps in order:
+//   1. Plant      create the production site
+//   2. Evidence   drop bills and invoices
+//   3. Data       add confirmed records that point at the evidence
+//   4. Calculate  run the engine and open the statement
 //
-// Flow: installation -> upload a bill -> add records that point at
-// the bill -> build a statement for a period.
+// This file only holds state and calls the API. The visual pieces
+// live in src/features/plant/.
 
-import { useEffect, useState } from "react";
+import { motion } from "motion/react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import type { ActivityRecord, Installation, Statement } from "../api/types";
+import { BuildPanel } from "../features/plant/BuildPanel";
+import type { PrecursorChoice } from "../features/plant/BuildPanel";
+import { DataComposer } from "../features/plant/DataComposer";
+import type { NewRecord } from "../features/plant/DataComposer";
+import { EvidenceDropzone } from "../features/plant/EvidenceDropzone";
+import type { EvidenceFile } from "../features/plant/EvidenceDropzone";
+import { ProgressRail } from "../features/plant/ProgressRail";
+import { RecordsBoard } from "../features/plant/RecordsBoard";
+import { Button } from "../ui/Button";
+import { Icon } from "../ui/Icons";
+import { Reveal } from "../ui/Reveal";
+import { useToast } from "../ui/Toast";
 
 export function PlantPage() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [installations, setInstallations] = useState<Installation[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
   const [records, setRecords] = useState<ActivityRecord[]>([]);
-  const [error, setError] = useState("");
+  const [files, setFiles] = useState<EvidenceFile[]>([]);
+  const [activeFile, setActiveFile] = useState<number | null>(null);
+  const [incoming, setIncoming] = useState<Statement[]>([]);
+  const [newName, setNewName] = useState("");
+  const [start, setStart] = useState("2026-01-01");
+  const [end, setEnd] = useState("2026-12-31");
 
-  const [plantName, setPlantName] = useState("");
-  const [evidenceId, setEvidenceId] = useState<number | null>(null);
-  const [kind, setKind] = useState("fuel");
-  const [name, setName] = useState("coal");
-  const [amount, setAmount] = useState("");
-  const [unit, setUnit] = useState("tonne");
-  const [periodStart, setPeriodStart] = useState("2026-01-01");
-  const [periodEnd, setPeriodEnd] = useState("2026-12-31");
-
-  const [steelTonnes, setSteelTonnes] = useState("");
-  const [upstreamId, setUpstreamId] = useState("");
-  const [upstreamProduct, setUpstreamProduct] = useState("");
-
-  async function loadInstallations() {
-    const rows = await api<Installation[]>("/installations");
-    setInstallations(rows);
-    if (rows.length && selected === null) setSelected(rows[0].id);
-  }
-
-  async function loadRecords(id: number) {
+  const loadRecords = useCallback(async (id: number) => {
     setRecords(await api<ActivityRecord[]>(`/installations/${id}/records`));
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [plants, ev, inc] = await Promise.all([
+          api<Installation[]>("/installations"),
+          api<EvidenceFile[]>("/evidence"),
+          api<Statement[]>("/statements/incoming"),
+        ]);
+        setInstallations(plants);
+        setFiles(ev);
+        setIncoming(inc);
+        if (plants.length) setSelected(plants[0].id);
+        if (ev.length) setActiveFile(ev[0].id);
+      } catch (problem) {
+        toast.error("Could not load your workspace", (problem as Error).message);
+      }
+    })();
+  }, []);
+
+  useEffect(() => { if (selected) loadRecords(selected); }, [selected, loadRecords]);
+
+  async function createPlant() {
+    try {
+      const plant = await api<Installation>("/installations", { body: { name: newName.trim() } });
+      setInstallations((all) => [...all, plant]);
+      setSelected(plant.id);
+      setNewName("");
+      toast.success("Plant created", plant.name);
+    } catch (problem) {
+      toast.error("Could not create the plant", (problem as Error).message);
+    }
   }
 
-  useEffect(() => { loadInstallations(); }, []);
-  useEffect(() => { if (selected) loadRecords(selected); }, [selected]);
-
-  async function guard(action: () => Promise<void>) {
-    setError("");
-    try { await action(); } catch (e) { setError((e as Error).message); }
+  async function addRecord(record: NewRecord) {
+    try {
+      await api("/records", { body: {
+        installation_id: selected, ...record, valid_from: start, valid_to: end,
+        evidence_id: activeFile,
+      }});
+      await loadRecords(selected!);
+      toast.success("Added to the ledger", `${record.name}: ${record.amount} ${record.unit}`);
+    } catch (problem) {
+      toast.error("Could not add the record", (problem as Error).message);
+      throw problem;
+    }
   }
 
-  const createPlant = () => guard(async () => {
-    await api("/installations", { body: { name: plantName } });
-    setPlantName("");
-    await loadInstallations();
-  });
+  async function correct(record: ActivityRecord, amount: string) {
+    try {
+      await api(`/records/${record.id}/correct`, { body: { new_amount: amount, evidence_id: record.evidence_id } });
+      await loadRecords(selected!);
+      toast.success("Correction recorded", "The old value stays in the history.");
+    } catch (problem) {
+      toast.error("Could not correct the record", (problem as Error).message);
+      throw problem;
+    }
+  }
 
-  const upload = (file: File) => guard(async () => {
-    const form = new FormData();
-    form.append("file", file);
-    const result = await api<{ id: number }>("/evidence", { form });
-    setEvidenceId(result.id);
-  });
+  async function calculate(choice: PrecursorChoice | null) {
+    try {
+      const precursors = choice ? [{
+        material_name: "steel", tonnes: choice.tonnes, cn_code: choice.cnCode,
+        upstream_statement_id: choice.upstream?.id ?? null,
+        upstream_product: choice.upstream ? choice.product : null,
+      }] : [];
+      const statement = await api<Statement>("/statements", { body: {
+        installation_id: selected, period_start: start, period_end: end, precursors,
+      }});
+      navigate(`/statements/${statement.id}`);
+    } catch (problem) {
+      toast.error("The calculation could not run", (problem as Error).message);
+      throw problem;
+    }
+  }
 
-  const addRecord = () => guard(async () => {
-    if (!selected || !evidenceId) throw new Error("Pick a plant and upload evidence first");
-    await api("/records", { body: {
-      installation_id: selected, kind, name, amount, unit,
-      valid_from: periodStart, valid_to: periodEnd, evidence_id: evidenceId,
-    }});
-    setAmount("");
-    await loadRecords(selected);
-  });
-
-  const build = () => guard(async () => {
-    if (!selected) return;
-    const precursors = steelTonnes ? [{
-      material_name: "steel", tonnes: steelTonnes, cn_code: "7208",
-      upstream_statement_id: upstreamId ? Number(upstreamId) : null,
-      upstream_product: upstreamProduct || null,
-    }] : [];
-    const statement = await api<Statement>("/statements", { body: {
-      installation_id: selected, period_start: periodStart,
-      period_end: periodEnd, precursors,
-    }});
-    navigate(`/statements/${statement.id}`);
-  });
+  const hasOutput = records.some((r) => r.kind === "output");
+  const hasFuel = records.some((r) => r.kind === "fuel");
+  const steps = [
+    { label: "Plant", done: installations.length > 0 },
+    { label: "Evidence", done: files.length > 0 },
+    { label: "Data", done: hasOutput && hasFuel },
+    { label: "Calculate", done: false },
+  ];
 
   return (
     <div className="stack">
-      {error && <p className="error">{error}</p>}
-
-      <section className="card">
-        <h3>1. Plant</h3>
-        <select value={selected ?? ""} onChange={(e) => setSelected(Number(e.target.value))}>
-          {installations.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
-        </select>
-        <input placeholder="New plant name" value={plantName}
-          onChange={(e) => setPlantName(e.target.value)} />
-        <button onClick={createPlant}>Add plant</button>
-      </section>
-
-      <section className="card">
-        <h3>2. Evidence and records</h3>
-        <input type="file" onChange={(e) => e.target.files && upload(e.target.files[0])} />
-        {evidenceId && <p>Evidence uploaded (id {evidenceId})</p>}
-        <div className="row">
-          <select value={kind} onChange={(e) => setKind(e.target.value)}>
-            <option value="fuel">fuel</option>
-            <option value="electricity">electricity</option>
-            <option value="output">output</option>
+      <div className="page-head">
+        <div>
+          <span className="eyebrow">Plant workspace</span>
+          <h1 className="serif page-title">Build a statement your buyer can trust.</h1>
+        </div>
+        {installations.length > 0 && (
+          <select className="input" style={{ width: 240 }} value={selected ?? ""}
+            onChange={(e) => setSelected(Number(e.target.value))}>
+            {installations.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="coal, grid_india, bolts" />
-          <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="amount" />
-          <input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="tonne, kwh, gj" />
-        </div>
-        <button onClick={addRecord}>Add record</button>
-        <table>
-          <thead><tr><th>Kind</th><th>Name</th><th>Amount</th><th>Unit</th><th>Evidence</th></tr></thead>
-          <tbody>
-            {records.map((r) => (
-              <tr key={r.id}><td>{r.kind}</td><td>{r.name}</td><td>{r.amount}</td>
-                <td>{r.unit}</td><td>#{r.evidence_id}</td></tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+        )}
+      </div>
 
-      <section className="card">
-        <h3>3. Build statement</h3>
-        <div className="row">
-          <input type="date" value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} />
-          <input type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} />
+      <ProgressRail steps={steps} />
+
+      <Reveal>
+        <div className="card stack">
+          <h3>1. Your plant</h3>
+          <p className="muted">The production site CBAM measures. Add one to begin.</p>
+          <div className="row">
+            <input className="input grow" placeholder="e.g. Pune forging plant" value={newName}
+              onChange={(e) => setNewName(e.target.value)} />
+            <Button variant="ghost" disabledReason={newName.trim() ? undefined : "Type a plant name."}
+              onClick={createPlant}><Icon name="plus" size={16} />Add plant</Button>
+          </div>
         </div>
-        <p className="hint">Steel bought (tonnes). Leave an upstream statement id empty to use the EU default.</p>
-        <div className="row">
-          <input placeholder="Steel tonnes" value={steelTonnes} onChange={(e) => setSteelTonnes(e.target.value)} />
-          <input placeholder="Mill statement id" value={upstreamId} onChange={(e) => setUpstreamId(e.target.value)} />
-          <input placeholder="Mill product name" value={upstreamProduct} onChange={(e) => setUpstreamProduct(e.target.value)} />
+      </Reveal>
+
+      <Reveal delay={0.05}>
+        <div className="card stack">
+          <h3>2. Evidence</h3>
+          <p className="muted">Every number needs a source document. Try the sample invoice from fixtures/sample_documents.</p>
+          <EvidenceDropzone files={files} activeId={activeFile}
+            onUploaded={(f) => { setFiles((all) => [f, ...all.filter((x) => x.id !== f.id)]); setActiveFile(f.id); }}
+            onPick={setActiveFile} />
         </div>
-        <button onClick={build}>Calculate</button>
-      </section>
+      </Reveal>
+
+      <Reveal delay={0.05}>
+        <div className="card stack">
+          <h3>3. Confirmed data</h3>
+          <div className="row">
+            <div className="field"><label>Period from</label>
+              <input className="input" type="date" value={start} onChange={(e) => setStart(e.target.value)} /></div>
+            <div className="field"><label>Period to</label>
+              <input className="input" type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></div>
+          </div>
+          <DataComposer hasPlant={selected !== null} hasEvidence={activeFile !== null} onAdd={addRecord} />
+          <RecordsBoard records={records} onCorrect={correct} />
+        </div>
+      </Reveal>
+
+      <Reveal delay={0.05}>
+        <motion.div className="card stack">
+          <h3>4. Calculate</h3>
+          <BuildPanel incoming={incoming}
+            blockedReason={!hasOutput ? "Add at least one product you made (kind: output)." : !hasFuel ? "Add the fuel you burned." : undefined}
+            onCalculate={calculate} />
+        </motion.div>
+      </Reveal>
     </div>
   );
 }

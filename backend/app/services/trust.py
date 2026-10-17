@@ -57,6 +57,7 @@ def sign_statement(
         key_dir, org, statement.content_hash.encode()
     )
     statement.status = "signed"
+    statement.signed_at = _now()
     session.commit()
     append_audit(session, actor_user_id, "statement_signed",
                  f"statement {statement.id}")

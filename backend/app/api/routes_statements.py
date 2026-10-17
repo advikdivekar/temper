@@ -33,6 +33,14 @@ from app.services.statements import (
 router = APIRouter(prefix="/statements", tags=["statements"])
 
 
+def safe_default_see(session: Session, statement: Statement) -> dict:
+    """Default SEE per product, or empty if it cannot be computed."""
+    try:
+        return default_see(session, statement)
+    except (ValueError, LookupError):
+        return {}
+
+
 def summary(session: Session, statement: Statement) -> dict:
     installation = session.get(Installation, statement.installation_id)
     owner = session.get(Organization, installation.organization_id)
@@ -52,6 +60,9 @@ def summary(session: Session, statement: Statement) -> dict:
         "verified": is_verified(session, statement),
         "see_by_product": statement.see_by_product,
         "content_hash": statement.content_hash,
+        "created_at": statement.created_at,
+        "timeline": timeline(session, statement, with_shares=False),
+        "default_see_by_product": safe_default_see(session, statement),
         "signature_valid": trust.signature_is_valid(session, statement),
         "opinions": [
             {"verifier_org_id": o.verifier_org_id,
@@ -68,6 +79,8 @@ def full_detail(session: Session, statement: Statement) -> dict:
     data = summary(session, statement)
     data["total_tco2"] = str(statement.total_tco2)
     data["trace"] = statement.trace
+    data["breakdown"] = statement.breakdown
+    data["timeline"] = timeline(session, statement, with_shares=True)
     data["supersedes_id"] = statement.supersedes_id
     data["inputs_hash"] = statement.inputs_hash
     data["precursors"] = [
@@ -77,6 +90,37 @@ def full_detail(session: Session, statement: Statement) -> dict:
         for r in refs
     ]
     return data
+
+
+def timeline(
+    session: Session, statement: Statement, with_shares: bool = True
+) -> list[dict]:
+    """The trust journey of a statement, oldest first.
+
+    with_shares adds who it was shared with. Recipients never get that,
+    because it would reveal the supplier's other customers.
+    """
+    events = [{"event": "built", "at": statement.created_at, "by": ""}]
+    if statement.signed_at:
+        events.append({"event": "signed", "at": statement.signed_at, "by": ""})
+    opinions = session.scalars(
+        select(VerificationOpinion).where(
+            VerificationOpinion.statement_id == statement.id
+        )
+    ).all()
+    for o in opinions:
+        verifier = session.get(Organization, o.verifier_org_id)
+        events.append({"event": f"verified_{o.conclusion}",
+                       "at": o.signed_at, "by": verifier.name})
+    grants = session.scalars(
+        select(ShareGrant).where(ShareGrant.statement_id == statement.id)
+    ).all() if with_shares else []
+    for g in grants:
+        recipient = session.get(Organization, g.recipient_org_id)
+        events.append({"event": "shared", "at": g.granted_at,
+                       "by": recipient.name, "revoked": g.revoked_at is not None,
+                       "grant_id": g.id})
+    return sorted(events, key=lambda e: e["at"])
 
 
 def load_readable(session, caller, statement_id) -> Statement:
@@ -106,6 +150,27 @@ def build(
     except (ValueError, LookupError) as error:
         raise HTTPException(400, str(error))
     return full_detail(session, statement)
+
+
+@router.get("/incoming")
+def incoming(
+    caller: Caller = Depends(get_caller),
+    session: Session = Depends(get_session),
+):
+    """Latest statements other organizations shared with this one.
+
+    A bolt maker uses this list to pick its mill's statement.
+    """
+    rows = session.scalars(
+        select(Statement)
+        .join(ShareGrant, ShareGrant.statement_id == Statement.id)
+        .where(
+            ShareGrant.recipient_org_id == caller.org.id,
+            ShareGrant.revoked_at.is_(None),
+        )
+        .order_by(Statement.id.desc())
+    ).all()
+    return [summary(session, s) for s in rows]
 
 
 @router.get("")
@@ -205,3 +270,46 @@ def savings(
         "saving_eur": str(saving.quantize(Decimal("0.01"))),
         "note": "Before free allocation adjustment.",
     }
+
+
+@router.get("/{statement_id}/chain")
+def chain(
+    statement_id: int,
+    caller: Caller = Depends(get_caller),
+    session: Session = Depends(get_session),
+):
+    """The supply chain behind a statement: who feeds whom.
+
+    Each node shows only name, result and verification state, never
+    plant volumes, so it is safe to show to importers.
+    """
+    root = load_readable(session, caller, statement_id)
+    nodes, edges, seen = [], [], set()
+    to_visit = [root.id]
+    while to_visit:
+        current_id = to_visit.pop()
+        if current_id in seen:
+            continue
+        seen.add(current_id)
+        statement = session.get(Statement, current_id)
+        installation = session.get(Installation, statement.installation_id)
+        owner = session.get(Organization, installation.organization_id)
+        nodes.append({
+            "id": statement.id, "supplier": owner.name,
+            "see_by_product": statement.see_by_product,
+            "status": statement.status,
+            "verified": is_verified(session, statement),
+        })
+        refs = session.scalars(
+            select(PrecursorRef).where(PrecursorRef.statement_id == current_id)
+        ).all()
+        for ref in refs:
+            edges.append({
+                "from": ref.upstream_statement_id, "to": current_id,
+                "material": ref.material_name,
+                "tonnes": str(ref.tonnes_used),
+                "uses_default": ref.upstream_statement_id is None,
+            })
+            if ref.upstream_statement_id:
+                to_visit.append(ref.upstream_statement_id)
+    return {"root": root.id, "nodes": nodes, "edges": edges}

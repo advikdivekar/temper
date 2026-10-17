@@ -46,8 +46,8 @@ def share(
 ):
     statement = load_readable(session, caller, statement_id)
     recipient = session.get(Organization, body.recipient_org_id)
-    if recipient is None or recipient.role not in ("importer", "verifier"):
-        raise HTTPException(400, "Recipient must be an importer or verifier")
+    if recipient is None or recipient.id == caller.org.id:
+        raise HTTPException(400, "Pick another organization to share with")
     try:
         grant = trust.grant_share(
             session, caller.org, statement, recipient.id, caller.user.id

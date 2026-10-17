@@ -42,6 +42,8 @@ class LotResult:
     intensity: Decimal
     basis: str  # "actual" or "default"
     line: str  # one trace line
+    material: str = ""
+    tonnes: Decimal = Decimal("0")
 
 
 def resolve_lot(
@@ -62,7 +64,9 @@ def resolve_lot(
         f"Precursor {lot.material_name}: {tonnes.value} t at "
         f"{intensity} tCO2 per tonne ({basis}) = {emissions.value} tCO2"
     )
-    return LotResult(emissions, intensity, basis, line)
+    return LotResult(
+        emissions, intensity, basis, line, lot.material_name, tonnes.value
+    )
 
 
 def precursor_emissions(

@@ -122,3 +122,51 @@ def test_savings_versus_default(tmp_path):
         "&certificate_price_eur=80", headers=supplier).json()
     # Nothing verified upstream, so actual equals default: no saving.
     assert result["saving_eur"] == "0.00"
+
+
+def test_incoming_chain_and_breakdown(tmp_path):
+    client = make_client(tmp_path)
+    mill, _ = register(client, "Mill", "supplier", "m@x.com")
+    fab, fab_id = register(client, "Fab", "supplier", "f@x.com")
+    verifier, verifier_id = register(client, "Ver", "verifier", "v@x.com")
+
+    def make(headers, coal, product, tonnes, precursors):
+        inst = client.post("/installations", json={"name": "P"},
+                           headers=headers).json()["id"]
+        ev = client.post("/evidence", headers=headers, files={
+            "file": ("b.txt", io.BytesIO(coal.encode()), "text/plain")
+        }).json()["id"]
+        for kind, name, amount in (("fuel", "coal", coal),
+                                   ("output", product, tonnes)):
+            client.post("/records", headers=headers, json={
+                "installation_id": inst, "kind": kind, "name": name,
+                "amount": amount, "unit": "tonne",
+                "valid_from": "2026-01-01", "valid_to": "2026-12-31",
+                "evidence_id": ev})
+        return client.post("/statements", headers=headers, json={
+            "installation_id": inst, "period_start": "2026-01-01",
+            "period_end": "2026-12-31", "precursors": precursors}).json()
+
+    mill_stmt = make(mill, "100", "steel_coil", "100", [])
+    assert mill_stmt["breakdown"]["direct"] == "240.000000"
+    client.post(f"/statements/{mill_stmt['id']}/sign", headers=mill)
+    client.post(f"/statements/{mill_stmt['id']}/share", headers=mill,
+                json={"recipient_org_id": verifier_id})
+    client.post(f"/statements/{mill_stmt['id']}/opinion", headers=verifier,
+                json={"conclusion": "satisfactory"})
+    client.post(f"/statements/{mill_stmt['id']}/share", headers=mill,
+                json={"recipient_org_id": fab_id})
+
+    incoming = client.get("/statements/incoming", headers=fab).json()
+    assert [s["id"] for s in incoming] == [mill_stmt["id"]]
+    assert incoming[0]["verified"] is True
+
+    fab_stmt = make(fab, "10", "bolts", "100", [
+        {"material_name": "steel", "tonnes": "100", "cn_code": "7208",
+         "upstream_statement_id": mill_stmt["id"],
+         "upstream_product": "steel_coil"}])
+    chain = client.get(f"/statements/{fab_stmt['id']}/chain",
+                       headers=fab).json()
+    assert len(chain["nodes"]) == 2 and len(chain["edges"]) == 1
+    events = [e["event"] for e in fab_stmt["timeline"]]
+    assert events == ["built"]

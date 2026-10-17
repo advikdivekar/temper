@@ -14,3 +14,6 @@ ml/data/raw/
 storage/
 dist/
 node_modules/
+*.mov
+*.mp4
+Screen Recording*

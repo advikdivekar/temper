@@ -1,0 +1,41 @@
+/* tokens.css
+   The design tokens: every colour, font, size and timing lives here,
+   so the whole product can be restyled from one file.
+
+   Idea: "tempering". Cool steel greys and warm paper, with one heat
+   coloured accent (ember) used sparingly for what matters. */
+
+:root {
+  --paper: #faf8f5;
+  --paper-2: #f3f0ea;
+  --white: #ffffff;
+  --ink: #0e0e10;
+  --ink-2: #2b2b30;
+  --muted: #6b6a66;
+  --faint: #a5a39d;
+  --line: rgba(14, 14, 16, 0.09);
+  --line-strong: rgba(14, 14, 16, 0.18);
+
+  --ember: #ff5a1f;
+  --ember-deep: #e2430b;
+  --ember-soft: #fff0e8;
+  --steel: #16202c;
+  --steel-2: #223142;
+
+  --good: #0f9d6b;
+  --good-soft: #e3f6ee;
+  --warn: #b86e00;
+  --warn-soft: #fff3dc;
+  --bad: #d92d20;
+  --bad-soft: #fdeceb;
+
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-serif: "Instrument Serif", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --radius: 14px;
+  --radius-lg: 22px;
+  --shadow-1: 0 1px 2px rgba(14, 14, 16, 0.04), 0 4px 16px rgba(14, 14, 16, 0.04);
+  --shadow-2: 0 2px 4px rgba(14, 14, 16, 0.05), 0 18px 48px rgba(14, 14, 16, 0.1);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}

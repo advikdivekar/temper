@@ -256,6 +256,7 @@ def build_statement(
         total_tco2=result.total_tco2,
         see_by_product={k: str(v) for k, v in result.see_by_product.items()},
         trace=result.trace,
+        breakdown=result.breakdown,
         created_at=_now(),
         supersedes_id=previous.id if previous else None,
     )

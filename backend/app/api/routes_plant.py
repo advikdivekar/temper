@@ -15,7 +15,7 @@ from app.api.schemas import (
 )
 from app.evidence import save_evidence
 from app.ledger import add_record, correct_record, records_as_of
-from app.models import ActivityRecord, Good, Installation
+from app.models import ActivityRecord, Evidence, Good, Installation
 from app.services.audit import append_audit
 
 router = APIRouter(tags=["plant"])
@@ -89,7 +89,24 @@ async def upload_evidence(
         session.commit()
     append_audit(session, caller.user.id, "evidence_uploaded",
                  f"evidence {record.id} sha256 {record.sha256}")
-    return {"id": record.id, "sha256": record.sha256}
+    return {"id": record.id, "sha256": record.sha256,
+            "filename": record.filename, "size_bytes": record.size_bytes}
+
+
+@router.get("/evidence")
+def list_evidence(
+    caller: Caller = Depends(supplier_only),
+    session: Session = Depends(get_session),
+):
+    rows = session.scalars(
+        select(Evidence).where(Evidence.organization_id == caller.org.id)
+        .order_by(Evidence.id.desc())
+    ).all()
+    return [
+        {"id": e.id, "filename": e.filename, "sha256": e.sha256,
+         "size_bytes": e.size_bytes}
+        for e in rows
+    ]
 
 
 @router.post("/records")

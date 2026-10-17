@@ -1,0 +1,90 @@
+/* ui.css
+   Styles for the reusable building blocks in src/ui/. */
+
+/* Buttons */
+.btn {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  gap: 8px; padding: 11px 18px; border-radius: 999px; border: 1px solid transparent;
+  font-weight: 600; font-size: 14px; cursor: pointer; white-space: nowrap;
+  transition: background 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+.btn.primary { background: var(--ink); color: white; box-shadow: var(--shadow-1); }
+.btn.primary:hover { background: var(--ink-2); box-shadow: var(--shadow-2); }
+.btn.ember { background: var(--ember); color: white; box-shadow: 0 8px 24px rgba(255, 90, 31, 0.35); }
+.btn.ember:hover { background: var(--ember-deep); }
+.btn.ghost { background: transparent; border-color: var(--line-strong); }
+.btn.ghost:hover { background: var(--white); border-color: var(--ink); }
+.btn.quiet { background: transparent; color: var(--muted); padding: 8px 12px; }
+.btn.quiet:hover { color: var(--ink); background: var(--paper-2); }
+.btn.big { padding: 15px 26px; font-size: 15px; }
+.btn.small { padding: 7px 12px; font-size: 13px; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+.spinner {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.35); border-top-color: white;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Cards */
+.card {
+  background: var(--white); border: 1px solid var(--line);
+  border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-1);
+  position: relative; overflow: hidden;
+}
+.card.spot::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0;
+  transition: opacity 0.3s;
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(255, 90, 31, 0.1), transparent 60%);
+}
+.card.spot:hover::before { opacity: 1; }
+.card.dark { background: var(--steel); color: white; border-color: var(--steel-2); }
+
+/* Pills */
+.pill {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+  border-radius: 999px; font-size: 12px; font-weight: 600;
+  background: var(--paper-2); color: var(--ink-2);
+}
+.pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pill.good { background: var(--good-soft); color: var(--good); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.pill.ember { background: var(--ember-soft); color: var(--ember-deep); }
+
+/* Form controls */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 12px; font-weight: 600; color: var(--muted); }
+.input {
+  width: 100%; padding: 11px 14px; border-radius: 12px; background: var(--white);
+  border: 1px solid var(--line-strong); outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.input:focus { border-color: var(--ember); box-shadow: 0 0 0 4px rgba(255, 90, 31, 0.14); }
+.input.invalid { border-color: var(--bad); box-shadow: 0 0 0 4px rgba(217, 45, 32, 0.12); }
+
+/* Skeleton loading */
+.skeleton {
+  border-radius: 10px;
+  background: linear-gradient(100deg, var(--paper-2) 30%, var(--white) 50%, var(--paper-2) 70%);
+  background-size: 200% 100%; animation: shimmer 1.3s linear infinite;
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* Toasts */
+.toasts {
+  position: fixed; right: 20px; bottom: 20px; z-index: 100;
+  display: flex; flex-direction: column; gap: 10px; width: min(380px, calc(100vw - 40px));
+}
+.toast {
+  display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px;
+  border-radius: 16px; background: var(--ink); color: white; box-shadow: var(--shadow-2);
+}
+.toast.error { background: var(--bad); }
+.toast.success { background: var(--good); }
+.toast strong { display: block; font-size: 14px; }
+.toast span { font-size: 13px; opacity: 0.9; }
+.toast .x { margin-left: auto; background: none; border: 0; color: white; opacity: 0.7; cursor: pointer; }
+
+.logo { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; letter-spacing: -0.02em; }
+.btn-wrap { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.btn-wrap .reason { color: var(--warn); font-size: 12px; font-weight: 500; max-width: 260px; }
