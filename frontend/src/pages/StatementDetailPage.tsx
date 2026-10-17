@@ -6,7 +6,7 @@
 //             the EU default (never the raw trace)
 
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import type { Organization, Savings, Statement } from "../api/types";
@@ -83,7 +83,7 @@ export function StatementDetailPage() {
           {statement.precursors && statement.precursors.map((p, i) => (
             <p key={i}>Precursor {p.material}, {p.tonnes} t:{" "}
               {p.uses_default ? "EU default value" :
-                <a href={`/statements/${p.upstream_statement_id}`}>supplier statement {p.upstream_statement_id}</a>}
+                <Link to={`/statements/${p.upstream_statement_id}`}>supplier statement {p.upstream_statement_id}</Link>}
             </p>
           ))}
         </section>

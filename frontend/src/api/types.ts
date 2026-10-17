@@ -69,9 +69,9 @@ export interface Statement {
 }
 
 export interface Savings {
-  actual_see: number;
-  default_see: number;
-  difference_per_tonne: number;
-  saving_eur: number;
+  actual_see: string;
+  default_see: string;
+  difference_per_tonne: string;
+  saving_eur: string;
   note: string;
 }

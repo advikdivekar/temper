@@ -11,6 +11,8 @@ SELECTIVE DISCLOSURE
     plant volumes.
 """
 
+from decimal import Decimal
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -192,13 +194,14 @@ def savings(
     bound until that factor is added.
     """
     statement = load_readable(session, caller, statement_id)
-    actual = float(statement.see_by_product[product])
-    default = float(default_see(session, statement)[product])
-    difference = max(default - actual, 0.0)
+    actual = Decimal(statement.see_by_product[product])
+    default = Decimal(default_see(session, statement)[product])
+    difference = max(default - actual, Decimal("0"))
+    saving = difference * Decimal(str(tonnes)) * Decimal(str(certificate_price_eur))
     return {
-        "actual_see": actual,
-        "default_see": default,
-        "difference_per_tonne": difference,
-        "saving_eur": round(difference * tonnes * certificate_price_eur, 2),
+        "actual_see": str(actual),
+        "default_see": str(default),
+        "difference_per_tonne": str(difference),
+        "saving_eur": str(saving.quantize(Decimal("0.01"))),
         "note": "Before free allocation adjustment.",
     }

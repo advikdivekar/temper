@@ -121,4 +121,4 @@ def test_savings_versus_default(tmp_path):
         f"/statements/{sid}/savings?product=bolts&tonnes=50"
         "&certificate_price_eur=80", headers=supplier).json()
     # Nothing verified upstream, so actual equals default: no saving.
-    assert result["saving_eur"] == 0
+    assert result["saving_eur"] == "0.00"
