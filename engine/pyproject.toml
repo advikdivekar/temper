@@ -1,0 +1,12 @@
+[project]
+name = "certify_engine"
+version = "0.1.0"
+description = "Deterministic CBAM emissions calculation core"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest", "hypothesis"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
