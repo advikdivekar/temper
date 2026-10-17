@@ -1,0 +1,35 @@
+/* styles.css: simple, readable styling for the whole app. */
+
+:root {
+  --ink: #1d2433;
+  --soft: #5b6475;
+  --line: #dde1ea;
+  --page: #f5f6fa;
+  --accent: #1f6feb;
+  --good: #1a7f4b;
+  --warn: #a15c00;
+  --bad: #b3261e;
+}
+
+body { margin: 0; font-family: system-ui, sans-serif; color: var(--ink); background: var(--page); }
+.topbar { display: flex; gap: 24px; align-items: center; padding: 12px 24px; background: white; border-bottom: 1px solid var(--line); }
+.topbar nav { display: flex; gap: 16px; flex: 1; }
+.who { color: var(--soft); display: flex; gap: 12px; align-items: center; }
+main { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+.stack { display: flex; flex-direction: column; gap: 16px; }
+.card { background: white; border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.narrow { max-width: 360px; margin: 48px auto; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+input, select, button { padding: 8px 10px; font-size: 14px; border: 1px solid var(--line); border-radius: 6px; }
+button { background: var(--accent); color: white; border: none; cursor: pointer; }
+button:disabled { opacity: 0.5; cursor: default; }
+button.link { background: none; color: var(--accent); }
+table { border-collapse: collapse; width: 100%; background: white; }
+th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); font-size: 14px; }
+.badge { padding: 2px 8px; border-radius: 10px; font-size: 12px; background: var(--line); }
+.badge.good { background: #d6f0e0; color: var(--good); }
+.badge.warn { background: #fbe9c8; color: var(--warn); }
+.badge.bad { background: #f6d5d2; color: var(--bad); }
+.error { color: var(--bad); }
+.hint { color: var(--soft); font-size: 13px; }
+.warnbox { background: #fff6e5; border-color: #f0c36d; flex-direction: row; align-items: center; justify-content: space-between; }

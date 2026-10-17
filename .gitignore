@@ -12,3 +12,5 @@ ml/data/raw/
 *.egg-info/
 *.db
 storage/
+dist/
+node_modules/

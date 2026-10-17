@@ -34,3 +34,27 @@ human confirms. No emissions number ever comes from a language model.
 - Every file begins with a header comment saying what it does.
 - Short functions, short lines (about 80 characters), plain comments.
 - No hyphens in file names or in comments.
+
+## Run it
+
+Backend (API docs at http://localhost:8000/docs):
+
+    cd backend
+    PYTHONPATH=. .venv/bin/uvicorn app.main:create_app --factory --reload
+
+Frontend (http://localhost:3000):
+
+    cd frontend && npm install && npm run dev
+
+Everything with Docker (untested so far): `docker compose up --build`
+
+Tests:
+
+    cd engine && .venv/bin/pytest -q
+    cd backend && PYTHONPATH=. .venv/bin/pytest -q
+
+## Reference data warning
+
+`data/default_values.json` and `data/emission_factors.json` hold
+placeholder or unverified numbers. Replace them from the official
+Commission publications before trusting any output.
