@@ -33,3 +33,8 @@ Exit: mill revision flags and recomputes the fabricator statement.
 - LEARN RAG regulation assistant, DPO from review corrections
 - data quality checks, security pass, demo, final report
 Exit: ablation report with measured results only.
+
+## Status
+Phases 1, 2 and 4 are built. Phase 3 (ML) has started: synthetic documents,
+schema, regex baseline and eval harness are in ml/ (baseline 63.3 percent on
+synthetic documents). See docs/lessons/lesson_04_evals_and_baseline.md.
