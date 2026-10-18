@@ -145,6 +145,18 @@ def _electricity(rng: random.Random, i: int, layouts) -> SyntheticDocument:
                 f"Meter B: {second:,} kWh\nTotal is the sum of both meters.\n")
         value = float(first + second)
         raw = {"op": "sum", "terms": [[first, "kwh"], [second, "kwh"]]}
+    elif layout == "reading_dates":
+        before = rng.randint(10_000, 500_000)
+        text = (f"METER CHECK\nReading on 05 {month.split()[0]}: {before:,}\n"
+                f"Reading on 04 next month: {before + kwh:,}\nUnits are kWh.\n")
+        value = float(kwh)
+        raw = {"op": "diff", "terms": [[before + kwh, "kwh"], [before, "kwh"]]}
+    elif layout == "latest_first":
+        before = rng.randint(10_000, 500_000)
+        text = (f"SUB STATION SHEET\nLatest reading: {indian_grouping(before + kwh)} kWh\n"
+                f"Earlier reading: {indian_grouping(before)} kWh\nPeriod: {month}\n")
+        value = float(kwh)
+        raw = {"op": "diff", "terms": [[before + kwh, "kwh"], [before, "kwh"]]}
     elif layout == "meter_readings":
         before = rng.randint(10_000, 500_000)
         text = (f"METER READING SHEET\nPeriod: {month}\nPrevious reading: {indian_grouping(before)}\n"
@@ -186,6 +198,19 @@ def _fuel(rng: random.Random, i: int, layouts) -> SyntheticDocument:
         tonnes = rng.randint(20, 900)
         extra = rng.choice([100, 250, 500, 750])
         text = f"DELIVERY RECEIPT\nCoal received: {tonnes} MT {extra} KG\nSupplier ref: {rng.randint(10000, 99999)}\n"
+        truth = {"fuel": "coal", "quantity": tonnes + extra / 1000, "unit": "tonne"}
+        terms, op = [[tonnes, "mt"], [extra, "kg"]], "sum"
+    elif layout == "coal_tonnes_plus_kg":
+        tonnes = rng.randint(20, 900)
+        extra = rng.choice([50, 200, 350, 500, 900])
+        text = f"COAL GATE PASS\nNet: {tonnes} tonnes + {extra} kg\nGate: {rng.randint(1, 4)}\n"
+        truth = {"fuel": "coal", "quantity": tonnes + extra / 1000, "unit": "tonne"}
+        terms, op = [[tonnes, "tonne"], [extra, "kg"]], "sum"
+    elif layout == "coal_and_words":
+        tonnes = rng.randint(20, 900)
+        extra = rng.choice([100, 300, 400, 650, 800])
+        text = (f"STOCK ENTRY\nSteam coal received {tonnes} MT and {extra} KG "
+                f"from siding {rng.randint(1, 9)}\n")
         truth = {"fuel": "coal", "quantity": tonnes + extra / 1000, "unit": "tonne"}
         terms, op = [[tonnes, "mt"], [extra, "kg"]], "sum"
     elif layout == "coal_lots":
@@ -240,6 +265,19 @@ def _production(rng: random.Random, i: int, layouts) -> SyntheticDocument:
         weeks = " ".join(f"Wk{k + 1}: {v} t;" for k, v in enumerate(weeks_list))
         text = f"MONTH SUMMARY ({product})\n{weeks}\nAdd the weeks for the month.\n"
         op, terms = "sum", [[v, "t"] for v in weeks_list]
+    elif layout == "fortnight_totals":
+        first = rng.randint(20, 900)
+        second = rng.randint(20, 900)
+        text = (f"FORTNIGHT REPORT ({product})\nFirst half: {first} t\n"
+                f"Second half: {second} t\nSum both halves for the month.\n")
+        tonnes = first + second
+        op, terms = "sum", [[first, "t"], [second, "t"]]
+    elif layout == "week_notes":
+        weeks_list = [rng.randint(5, 80) for _ in range(rng.randint(3, 5))]
+        lines = "".join(f"Week {k + 1} output {v} t\n" for k, v in enumerate(weeks_list))
+        text = f"{product.upper()} OUTPUT\n{lines}Total for the month is the sum.\n"
+        tonnes = sum(weeks_list)
+        op, terms = "sum", [[v, "t"] for v in weeks_list]
     elif layout == "shift_totals":
         shifts = [rng.randint(5, 400) for _ in range(3)]
         text = (f"PRODUCTION BY SHIFT ({product})\nShift A: {shifts[0]} t   Shift B: {shifts[1]} t   "
@@ -270,9 +308,12 @@ def _production(rng: random.Random, i: int, layouts) -> SyntheticDocument:
 GROUPS = {
     "skills": {
         "electricity_bill": ["opening_closing", "gwh_style", "counter_start_end",
-                             "present_previous_mwh", "two_meters"],
-        "fuel_invoice": ["coal_kgs_invoice", "coal_quintal", "coal_lots", "coal_t_kg"],
-        "production_log": ["quintal_register", "shift_totals", "daily_log"],
+                             "present_previous_mwh", "two_meters", "reading_dates",
+                             "latest_first"],
+        "fuel_invoice": ["coal_kgs_invoice", "coal_quintal", "coal_lots", "coal_t_kg", "coal_tonnes_plus_kg",
+                         "coal_and_words"],
+        "production_log": ["quintal_register", "shift_totals", "daily_log", "fortnight_totals",
+                           "week_notes"],
     },
     "held_out": {
         "electricity_bill": ["meter_readings"],

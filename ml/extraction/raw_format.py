@@ -31,7 +31,8 @@ SHAPES = {
 RULES = (
     "Copy each number exactly as it is written on the page, including commas, and give each its unit "
     "(kwh, mwh, gwh, kg, t, mt, quintal, gj, kl). Do not calculate anything. "
-    "Use op diff with the LATER reading first when two meter readings are given, "
+    "List numbers in the order they appear on the page. "
+    "Use op diff when two meter readings are given, "
     "sum when several amounts must be added, otherwise single."
 )
 
@@ -60,13 +61,36 @@ def completion_for(doc: SyntheticDocument) -> str:
     terms = []
     for number, unit in raw["terms"]:
         terms.append([written_form(number, doc.text) or str(number), unit])
+    if raw["op"] == "diff":
+        terms.sort(key=lambda t: doc.text.find(t[0]))   # page order
     raw["terms"] = terms
     return json.dumps(raw, ensure_ascii=False)
 
 
+PAIR = re.compile(r'\[\s*"([^"]+)"\s*,\s*"([A-Za-z]+)"\s*\]')
+
+
 def parse(answer: str) -> dict:
+    """Read the model's answer. A cut off or rambling answer is salvaged:
+    we keep the leading fields and every well formed [number, unit] pair
+    that has a numeric first part. The page check judges the rest."""
     try:
         raw = json.loads(answer.strip())
+        if not isinstance(raw, dict):
+            return {}
+        terms = raw.get("terms")
+        if isinstance(terms, list):   # drop junk such as a copied sentence
+            raw["terms"] = [t for t in terms if isinstance(t, list)
+                            and len(t) == 2 and NUMBER.fullmatch(str(t[0]))]
+        return raw
     except json.JSONDecodeError:
-        return {}
-    return raw if isinstance(raw, dict) else {}
+        pass
+    raw = {}
+    for key in ("op", "fuel", "product"):
+        found = re.search(rf'"{key}"\s*:\s*"([^"]+)"', answer)
+        if found:
+            raw[key] = found.group(1)
+    pairs = [[n, u] for n, u in PAIR.findall(answer) if NUMBER.fullmatch(n)]
+    if pairs:
+        raw["terms"] = pairs
+    return raw

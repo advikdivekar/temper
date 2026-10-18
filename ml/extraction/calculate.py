@@ -27,8 +27,9 @@ CONCEPTS IN THIS FILE
         and code removes the commas. Regrouping digits is where small
         models slip, copying is what they do well.
     Sanity guard
-        A difference of two readings that is zero or negative is
-        flagged for review.
+        A difference of two readings that is zero is flagged for review.
+        The difference is always bigger minus smaller, because meters
+        only count up and a model cannot tell which reading is later.
     Grounding check
         Every number the model copied must literally appear on the
         page, after removing Indian commas and turning Hindi digits into
@@ -38,6 +39,7 @@ CONCEPTS IN THIS FILE
 """
 
 import re
+from collections import Counter
 from decimal import Decimal, InvalidOperation
 
 from ml.extraction.schema import ExtractedField, Extraction
@@ -101,26 +103,28 @@ def compute(doc_type: str, raw: dict):
     if raw["op"] == "sum":
         return sum(values, Decimal(0)), unit_name
     if raw["op"] == "diff" and len(values) == 2:
-        return values[0] - values[1], unit_name
+        # Meters only count up, so the bigger reading is the later one.
+        # The page order does not matter, which the model cannot know.
+        return abs(values[0] - values[1]), unit_name
     return None
 
 
-def numbers_on_page(text: str) -> set:
-    """Every number written on the page, as exact Decimals."""
+def numbers_on_page(text: str) -> Counter:
+    """Every number written on the page, with how many times it appears."""
     clean = text.translate(HINDI_DIGITS).replace(",", "")
-    found = set()
-    for token in re.findall(r"\d+(?:\.\d+)?", clean):
-        found.add(Decimal(token))
-    return found
+    return Counter(Decimal(t) for t in re.findall(r"\d+(?:\.\d+)?", clean))
 
 
 def is_grounded(raw: dict, text: str) -> bool:
-    """True when every copied number really appears on the page."""
+    """True when every copied number really appears on the page, and no
+    number is used more often than the page writes it (this catches a
+    model that loops and repeats the same terms)."""
     page = numbers_on_page(text)
     try:
-        return all(to_decimal(term[0]) in page for term in raw["terms"])
+        copied = Counter(to_decimal(term[0]) for term in raw["terms"])
     except (KeyError, InvalidOperation, TypeError, ValueError, IndexError):
         return False
+    return all(page[number] >= times for number, times in copied.items())
 
 
 def to_extraction(doc_type: str, raw: dict, text: str) -> Extraction:
@@ -130,7 +134,7 @@ def to_extraction(doc_type: str, raw: dict, text: str) -> Extraction:
     if result is None:
         return out
     value, unit_name = result
-    sensible = value > 0 or raw.get("op") != "diff"   # a reading cannot go backwards
+    sensible = value > 0 or raw.get("op") != "diff"   # no use at all is odd
     confidence = 0.95 if is_grounded(raw, text) and sensible else 0.4
     number = float(value)
     if doc_type == "electricity_bill":

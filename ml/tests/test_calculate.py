@@ -74,7 +74,26 @@ def test_verbatim_round_trip_on_every_layout():
         assert result.get(next(iter(doc.truth))).confidence > 0.85, (doc.layout, doc.text)
 
 
-def test_backwards_reading_is_flagged():
+def test_reading_order_does_not_matter():
     raw = {"op": "diff", "terms": [["100", "kwh"], ["900", "kwh"]]}
     out = to_extraction("electricity_bill", raw, "readings 100 and 900")
+    assert out.get("energy_kwh").value == 800
+
+
+def test_equal_readings_are_flagged():
+    raw = {"op": "diff", "terms": [["500", "kwh"], ["500", "kwh"]]}
+    out = to_extraction("electricity_bill", raw, "readings 500 and 500")
     assert out.get("energy_kwh").confidence < 0.85
+
+
+def test_looping_answer_is_flagged():
+    raw = {"op": "sum", "terms": [["47", "t"], ["26", "t"], ["47", "t"]]}
+    page = "Wk1: 47 t; Wk2: 26 t"
+    out = to_extraction("production_log", dict(raw, product="bolts"), page)
+    assert out.get("tonnes").confidence < 0.85
+
+
+def test_cut_off_answer_is_salvaged():
+    from ml.extraction.raw_format import parse
+    raw = parse('{"op": "sum", "terms": [["47", "t"], ["26", "t"], ["Add the')
+    assert raw["terms"] == [["47", "t"], ["26", "t"]]
