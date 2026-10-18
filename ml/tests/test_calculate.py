@@ -163,3 +163,18 @@ def test_padded_number_is_accepted():
     from ml.extraction.raw_format import parse
     raw = parse('{"op": "single", "terms": [["104,061     ", "kwh"]]}')
     assert raw["terms"] == [["104,061", "kwh"]]
+
+
+def test_service_answer_shape():
+    from ml.extraction.schema import Extraction, ExtractedField
+    from ml.serving.extract_service import answer
+
+    def fake(doc_type, text):
+        out = Extraction(doc_type)
+        out.fields.append(ExtractedField("energy_kwh", 100.0, 0.4))
+        return out
+
+    reply = answer(fake, "electricity_bill", "x")
+    assert reply["needs_review"] is True
+    assert reply["fields"][0]["name"] == "energy_kwh"
+    assert reply["missing"] == []

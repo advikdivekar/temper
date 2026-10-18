@@ -31,3 +31,4 @@ ml/.venv/
 ml/adapters/
 ml/data/raw/
 ml/evals/figures/
+ml/models/

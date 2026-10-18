@@ -4,6 +4,8 @@ Scores a LoRA adapter on the clean bench and the hard bench.
 
     ml/.venv/bin/python -m ml.evals.run_finetuned ml/adapters/test_run
     ml/.venv/bin/python -m ml.evals.run_finetuned ml/adapters/run3 raw   (copy format)
+    ml/.venv/bin/python -m ml.evals.run_finetuned ml/models/run8_q4 raw quick
+        (a fused or quantized model folder; quick skips the slow benches)
 
 Run from the repository root with the ml virtual environment.
 The report also warns if the score looks too good to trust.
@@ -25,7 +27,10 @@ TOO_GOOD = 0.97
 def main() -> None:
     adapter = sys.argv[1]
     use_raw = len(sys.argv) > 2 and sys.argv[2] == "raw"
-    extract = (finetuned_raw if use_raw else finetuned_mlx).make_extractor(adapter)
+    if "models/" in adapter:   # a fused (and maybe quantized) model folder
+        extract = finetuned_raw.make_extractor(None, base=adapter)
+    else:
+        extract = (finetuned_raw if use_raw else finetuned_mlx).make_extractor(adapter)
     results = {}
     # fresh: layouts we looked at after run 6, so now a dev set.
     # mixed: composed pages with TEST words, partly read after run 7.
@@ -34,6 +39,8 @@ def main() -> None:
                ("fresh", fresh_bench(60)),
                ("mixed", compose(60, seed=31337, split="test")),
                ("final", compose(60, seed=9090, split="test"))]
+    if "quick" in sys.argv:   # skip the two slow benches
+        benches = [b for b in benches if b[0] in ("clean", "fresh", "final")]
     if "final" in sys.argv:   # only the untouched test, once per model
         benches = benches[-1:]
     for name, docs in benches:
