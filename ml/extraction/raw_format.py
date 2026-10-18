@@ -72,6 +72,8 @@ GLUED = re.compile(r"([^a-zA-Z]+)([a-zA-Z]+)")
 
 def _tidy(term):
     """A [number, unit] pair, or None. Splits a glued "804.94mwh"."""
+    if isinstance(term, list):
+        term = [str(part).strip() for part in term]   # "104,061   " is fine
     if isinstance(term, list) and len(term) == 1:
         found = GLUED.fullmatch(str(term[0]))
         term = [found.group(1), found.group(2)] if found else term

@@ -1,0 +1,120 @@
+{
+  "clean": {
+    "documents": 180,
+    "document_accuracy": 1.0,
+    "field_accuracy": 1.0,
+    "review_rate": 0.0,
+    "silent_error_rate": 0.0,
+    "caught_error_rate": 0.0,
+    "by_type": {
+      "electricity_bill": 1.0,
+      "fuel_invoice": 1.0,
+      "production_log": 1.0
+    },
+    "by_layout": {
+      "electricity_bill/mwh_style": 1.0,
+      "electricity_bill/private_utility": 1.0,
+      "electricity_bill/state_board": 1.0,
+      "fuel_invoice/coal_tonnes": 1.0,
+      "fuel_invoice/diesel_kl": 1.0,
+      "fuel_invoice/gas_gj": 1.0,
+      "production_log/kg_style": 1.0,
+      "production_log/sentence": 1.0,
+      "production_log/table_row": 1.0
+    },
+    "note": "SYNTHETIC documents only. Not a claim about real Indian documents.",
+    "seconds": 125.0
+  },
+  "hard": {
+    "documents": 540,
+    "document_accuracy": 0.8722222222222222,
+    "field_accuracy": 0.9361111111111111,
+    "review_rate": 0.012962962962962963,
+    "silent_error_rate": 0.058333333333333334,
+    "caught_error_rate": 0.005555555555555556,
+    "by_type": {
+      "electricity_bill": 1.0,
+      "fuel_invoice": 0.9222222222222223,
+      "production_log": 0.6944444444444444
+    },
+    "by_layout": {
+      "electricity_bill/dated_readings": 1.0,
+      "electricity_bill/meter_readings": 1.0,
+      "electricity_bill/mwh_style": 1.0,
+      "electricity_bill/private_utility": 1.0,
+      "electricity_bill/state_board": 1.0,
+      "fuel_invoice/coal_kg": 1.0,
+      "fuel_invoice/coal_mt_kg_split": 0.7666666666666667,
+      "fuel_invoice/coal_tonnes": 1.0,
+      "fuel_invoice/diesel_kl": 1.0,
+      "fuel_invoice/gas_gj": 1.0,
+      "production_log/kg_style": 0.8235294117647058,
+      "production_log/ledger_line": 0.9833333333333333,
+      "production_log/sentence": 1.0,
+      "production_log/table_row": 1.0,
+      "production_log/weekly_totals": 0.15
+    },
+    "note": "SYNTHETIC documents only. Not a claim about real Indian documents.",
+    "seconds": 450.7
+  },
+  "fresh": {
+    "documents": 180,
+    "document_accuracy": 0.8444444444444444,
+    "field_accuracy": 0.9222222222222223,
+    "review_rate": 0.03333333333333333,
+    "silent_error_rate": 0.05277777777777778,
+    "caught_error_rate": 0.025,
+    "by_type": {
+      "electricity_bill": 0.5666666666666667,
+      "fuel_invoice": 0.9833333333333333,
+      "production_log": 0.9833333333333333
+    },
+    "by_layout": {
+      "electricity_bill/consumer_line": 0.9565217391304348,
+      "electricity_bill/feeder_mwh_sum": 0.0,
+      "electricity_bill/prev_curr_units": 0.6666666666666666,
+      "fuel_invoice/coal_invoice_rate": 0.9473684210526315,
+      "fuel_invoice/diesel_two_deliveries": 1.0,
+      "fuel_invoice/gas_two_months": 1.0,
+      "production_log/batch_dated": 1.0,
+      "production_log/batch_kg_sum": 0.9629629629629629
+    },
+    "note": "SYNTHETIC documents only. Not a claim about real Indian documents.",
+    "seconds": 150.9
+  },
+  "mixed": {
+    "documents": 180,
+    "document_accuracy": 0.7555555555555555,
+    "field_accuracy": 0.875,
+    "review_rate": 0.030555555555555555,
+    "silent_error_rate": 0.10555555555555556,
+    "caught_error_rate": 0.019444444444444445,
+    "by_type": {
+      "electricity_bill": 0.65,
+      "fuel_invoice": 0.8166666666666667,
+      "production_log": 0.8
+    },
+    "by_layout": {
+      "electricity_bill/mixed_inline": 0.375,
+      "electricity_bill/mixed_lines": 0.5882352941176471,
+      "electricity_bill/mixed_pipe": 0.75,
+      "electricity_bill/mixed_sentence": 0.75,
+      "electricity_bill/mixed_table": 0.8333333333333334,
+      "electricity_bill/mixed_unit_header": 0.6666666666666666,
+      "fuel_invoice/mixed_inline": 1.0,
+      "fuel_invoice/mixed_lines": 1.0,
+      "fuel_invoice/mixed_pipe": 0.6923076923076923,
+      "fuel_invoice/mixed_sentence": 0.625,
+      "fuel_invoice/mixed_table": 0.875,
+      "fuel_invoice/mixed_unit_header": 1.0,
+      "production_log/mixed_inline": 0.7692307692307693,
+      "production_log/mixed_lines": 0.7857142857142857,
+      "production_log/mixed_pipe": 1.0,
+      "production_log/mixed_sentence": 0.6923076923076923,
+      "production_log/mixed_table": 0.8,
+      "production_log/mixed_unit_header": 0.8571428571428571
+    },
+    "note": "SYNTHETIC documents only. Not a claim about real Indian documents.",
+    "seconds": 159.5
+  }
+}

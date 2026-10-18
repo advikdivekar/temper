@@ -10,15 +10,18 @@ CONCEPTS IN THIS FILE
         Half the numbers follow realistic ranges, half are spread over
         short and long values. Only balanced numbers pulled training
         away from the lengths real pages have.
-    Same mix as before
-        60 percent known layouts, 40 percent skills layouts. The held out
-        test layouts are never included.
+    Hand written plus composed
+        The hand written known and skills layouts, plus pages composed
+        from interchangeable pieces (compose_documents.py) using TRAIN
+        words only. The held out layouts and the TEST words are never
+        included.
 """
 
 import json
 import random
 from pathlib import Path
 
+from ml.data.compose_documents import compose
 from ml.data.synthetic_documents import generate
 from ml.extraction.raw_format import build_prompt, completion_for
 
@@ -37,10 +40,13 @@ def main() -> None:
     train = (generate(700, seed=3001, noisy=True)
              + generate(500, seed=3002, noisy=True, balanced=True)
              + generate(700, seed=3003, noisy=True, group="skills")
-             + generate(500, seed=3004, noisy=True, group="skills", balanced=True))
+             + generate(500, seed=3004, noisy=True, group="skills", balanced=True)
+             + compose(3500, seed=3005)
+             + compose(2000, seed=3006, balanced=True))
     random.Random(5).shuffle(train)
     valid = (generate(60, seed=4002, noisy=True)
-             + generate(40, seed=4004, noisy=True, group="skills"))
+             + generate(40, seed=4004, noisy=True, group="skills")
+             + compose(40, seed=4006))
     _write(OUT / "train.jsonl", train)
     _write(OUT / "valid.jsonl", valid)
     print(f"train {len(train)} documents, validation {len(valid)} documents")

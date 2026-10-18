@@ -37,4 +37,6 @@ Exit: ablation report with measured results only.
 ## Status
 Phases 1, 2 and 4 are built. Phase 3 (ML) has started: synthetic documents,
 schema, regex baseline and eval harness are in ml/ (baseline 63.3 percent on
-synthetic documents). See docs/lessons/lesson_04_evals_and_baseline.md.
+synthetic documents). A 1B model fine tuned with LoRA reads them at 96.1 percent
+on a final untouched test of new wording and 73.9 percent on new structures
+(synthetic only). See docs/lessons/lesson_04, 05 and 06.

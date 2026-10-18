@@ -30,6 +30,18 @@ CONCEPTS IN THIS FILE
         A difference of two readings that is zero is flagged for review.
         The difference is always bigger minus smaller, because meters
         only count up and a model cannot tell which reading is later.
+    Page words decide the fuel and the product
+        The model used to tie "coal" to a layout it had seen, so a page
+        about diesel came back as coal. Now code looks for the words
+        (diesel, HSD, gas, PNG, coal) on the page and, if there are
+        none, falls back on the unit (kl is diesel, GJ is gas). If the
+        model disagrees with the page, the page wins. If nothing
+        agrees, the field is flagged for review.
+    Coverage check
+        A small model sometimes drops the last item of a list (four
+        weekly figures, only three copied). Code finds every number
+        written with its unit on the page ("25 t", "100 KG"). If one of
+        them was not copied, the field is flagged for review.
     Grounding check
         Every number the model copied must literally appear on the
         page, after removing Indian commas and turning Hindi digits into
@@ -76,6 +88,43 @@ def to_decimal(value) -> Decimal:
     return Decimal(text)
 
 
+# Words that name a fuel, and the unit each fuel is reported in.
+FUEL_WORDS = {
+    "natural_gas": ("natural gas", "png", "gas"),
+    "diesel": ("diesel", "hsd"),
+    "coal": ("coal", "coke"),
+}
+UNIT_FUEL = {"mass": "coal", "gj": "natural_gas", "volume": "diesel"}
+PRODUCTS = ("bolts", "nuts", "washers", "rivets", "screws", "studs")
+# Scan noise swaps o and l for 0 and 1 (also Hindi digits) inside words.
+UNNOISE = str.maketrans("01\u0966\u0967", "olol")
+
+
+def _words(text: str) -> str:
+    return " ".join(text.translate(UNNOISE).lower().split())
+
+
+def fuel_from_page(text: str, raw: dict):
+    """(fuel, sure). The page words win, then the unit, then the model."""
+    page = _words(text)
+    named = [f for f, words in FUEL_WORDS.items() if any(w in page for w in words)]
+    unit = str(raw["terms"][0][1]).lower() if raw.get("terms") else ""
+    by_unit = UNIT_FUEL.get(UNITS.get(unit, ("",))[0])
+    if len(named) == 1:
+        return named[0], named[0] == by_unit
+    return (by_unit or raw.get("fuel")), by_unit is not None
+
+
+def product_from_page(text: str, raw: dict):
+    """(product, sure). A product word on the page beats the model."""
+    page = _words(text)
+    found = [p for p in PRODUCTS if p in page]
+    if len(found) == 1:
+        return found[0], True
+    guess = str(raw.get("product", "")).lower()
+    return raw.get("product"), bool(guess) and guess in page
+
+
 def _target(doc_type: str, raw: dict):
     if doc_type == "fuel_invoice":
         return FUEL_UNIT.get(raw.get("fuel"))
@@ -115,6 +164,25 @@ def numbers_on_page(text: str) -> Counter:
     return Counter(Decimal(t) for t in re.findall(r"\d+(?:\.\d+)?", clean))
 
 
+UNIT_WORD = (r"(?:kwh|mwh|gwh|kgs?|mt|t|tonnes?|quintals?|gj|kl)")
+WITH_UNIT = re.compile(rf"(?<![A-Za-z0-9.])(\d+(?:\.\d+)?)\s*{UNIT_WORD}\b", re.IGNORECASE)
+
+
+def unused_amounts(raw: dict, text: str) -> list:
+    """Numbers written with a unit on the page that the model did not copy.
+    Lines with an equals sign (1 quintal = 100 kg) are conversion notes."""
+    try:
+        copied = Counter(to_decimal(term[0]) for term in raw["terms"])
+    except (KeyError, InvalidOperation, TypeError, ValueError, IndexError):
+        return []
+    page = text.translate(HINDI_DIGITS).replace(",", "")
+    found = Counter()
+    for line in page.split("\n"):
+        if "=" not in line:
+            found.update(Decimal(n) for n in WITH_UNIT.findall(line))
+    return [n for n, times in found.items() if copied[n] < times]
+
+
 def is_grounded(raw: dict, text: str) -> bool:
     """True when every copied number really appears on the page, and no
     number is used more often than the page writes it (this catches a
@@ -130,12 +198,21 @@ def is_grounded(raw: dict, text: str) -> bool:
 def to_extraction(doc_type: str, raw: dict, text: str) -> Extraction:
     """Final fields from a raw answer, with a confidence from grounding."""
     out = Extraction(doc_type)
+    labelled = True
+    if doc_type == "fuel_invoice" and raw.get("terms"):
+        fuel, labelled = fuel_from_page(text, raw)
+        raw = dict(raw, fuel=fuel)
+    if doc_type == "production_log" and raw.get("product"):
+        product, labelled = product_from_page(text, raw)
+        raw = dict(raw, product=product)
     result = compute(doc_type, raw)
     if result is None:
         return out
     value, unit_name = result
     sensible = value > 0 or raw.get("op") != "diff"   # no use at all is odd
-    confidence = 0.95 if is_grounded(raw, text) and sensible else 0.4
+    complete = not unused_amounts(raw, text)
+    confidence = 0.95 if (is_grounded(raw, text) and sensible and labelled
+                          and complete) else 0.4
     number = float(value)
     if doc_type == "electricity_bill":
         out.fields.append(ExtractedField("energy_kwh", number, confidence))

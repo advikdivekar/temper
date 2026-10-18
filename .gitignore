@@ -30,3 +30,4 @@ ml/data/valid.jsonl
 ml/.venv/
 ml/adapters/
 ml/data/raw/
+ml/evals/figures/
