@@ -5,7 +5,7 @@
 // confirm. If the reader says "check this", you must tick that you did.
 
 import { useEffect, useState } from "react";
-import { api } from "../../api/client";
+import { api, fetchFileUrl } from "../../api/client";
 import type { DocumentReading } from "../../api/types";
 import { useToast } from "../../ui/Toast";
 import type { VaultFile } from "./DropVault";
@@ -37,6 +37,19 @@ function Page({ text, hows }: { text: string; hows: string[] }) {
   const used = new Set(hows.flatMap((h) => h.match(NUMBER) ?? []));
   const parts = text.split(/([0-9०-९][0-9०-९,]*(?:\.[0-9]+)?)/);
   return <pre className="page">{parts.map((p, i) => (used.has(p) ? <mark key={i}>{p}</mark> : p))}</pre>;
+}
+
+// The original picture of a scan, shown beside what the OCR made of it,
+// so a person can compare each number with the real page.
+function Original({ evidenceId }: { evidenceId: number }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let made = "";
+    fetchFileUrl(`/evidence/${evidenceId}/file`).then((u) => { made = u; setUrl(u); }).catch(() => setUrl(null));
+    return () => { if (made) URL.revokeObjectURL(made); };
+  }, [evidenceId]);
+  if (!url) return null;
+  return <img className="original" src={url} alt="The document you uploaded" />;
 }
 
 export function ReaderPanel({ fileId, plant, period, onUploaded, onConfirmed }: Props) {
@@ -99,13 +112,18 @@ export function ReaderPanel({ fileId, plant, period, onUploaded, onConfirmed }: 
 
       {reading && (
         <div className="review">
-          {reading.source === "scan" && (
-            <p className="warn-note scan-note">
-              Read from a picture ({Math.round(reading.ocr_confidence ?? 0)}% sure of the letters).
-              A digit may be misread, so compare each number with your original.
-            </p>
-          )}
-          <Page text={reading.text} hows={reading.fields.map((f) => f.how)} />
+          <div className="source">
+            {reading.source === "scan" && (
+              <>
+                <p className="warn-note scan-note">
+                  Read from a picture ({Math.round(reading.ocr_confidence ?? 0)}% sure of the letters).
+                  A digit may be misread, so compare each number with the picture below.
+                </p>
+                <Original evidenceId={reading.evidence_id} />
+              </>
+            )}
+            <Page text={reading.text} hows={reading.fields.map((f) => f.how)} />
+          </div>
           <div className="verdict">
             {reading.fields.map((f) => (
               <div key={f.name} className="vrow">

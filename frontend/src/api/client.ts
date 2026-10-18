@@ -42,3 +42,15 @@ export async function api<T>(
   }
   return response.json() as Promise<T>;
 }
+
+// Fetch a file (a picture or PDF) with the login token and return a
+// temporary local address the page can show. Plain <img src> cannot
+// send the token, so we download it first.
+export async function fetchFileUrl(path: string): Promise<string> {
+  const token = getToken();
+  const response = await fetch(BASE + path, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!response.ok) throw new Error(`Could not load the file (${response.status})`);
+  return URL.createObjectURL(await response.blob());
+}

@@ -230,6 +230,8 @@ a.qcell:hover { background: rgba(255, 255, 255, 0.6); }
 .reader { display: flex; flex-direction: column; gap: 12px; padding: 18px 0; border-top: 1px solid var(--rule-2); }
 .review { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
 .page { margin: 0; padding: 14px; background: #fff; border: 1px solid var(--rule-2); font-family: var(--font-mono); font-size: 12.5px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 320px; overflow: auto; }
+.source { display: grid; gap: 10px; min-width: 0; }
+.original { display: block; max-width: 100%; max-height: 360px; object-fit: contain; border: 1px solid var(--rule-2); background: #fff; }
 .page mark { background: rgba(255, 90, 31, 0.18); color: inherit; padding: 0 2px; }
 .verdict { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .vrow { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 8px 0; border-bottom: 1px solid var(--rule); text-transform: capitalize; }

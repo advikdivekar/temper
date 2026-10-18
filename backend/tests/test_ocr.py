@@ -131,3 +131,12 @@ def test_scan_through_the_api_always_needs_a_check(tmp_path, monkeypatch):
                        json={"doc_type": "electricity_bill"}).json()
     assert done["needs_review"] is True and done["source"] == "scan"
     assert done["ocr_confidence"] > 0 and "528063" in seen["text"].replace(",", "")
+
+
+def test_original_file_is_served_to_its_owner_only(tmp_path, monkeypatch):
+    client, headers, _ = setup(tmp_path, monkeypatch)
+    photo = upload(client, headers, as_bytes("PNG"), "photo.png")
+    got = client.get(f"/evidence/{photo}/file", headers=headers)
+    assert got.status_code == 200 and got.headers["content-type"] == "image/png"
+    assert got.headers["x-content-type-options"] == "nosniff"
+    assert client.get(f"/evidence/{photo}/file").status_code in (401, 403)

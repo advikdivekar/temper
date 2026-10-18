@@ -7,7 +7,7 @@ WHAT THIS FILE DOES
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -18,6 +18,7 @@ from app.api.schemas import (
 from app.evidence import save_evidence, verify_evidence
 from app.ledger import add_record, correct_record, records_as_of
 from app.models import ActivityRecord, Evidence, Good, Installation
+from app.services import ocr
 from app.services.audit import append_audit
 
 router = APIRouter(tags=["plant"])
@@ -222,3 +223,25 @@ def ledger_history(
         .order_by(ActivityRecord.id)
     ).all()
     return [_record_json(r) for r in rows]
+
+
+SHOWN_AS = {"pdf": "application/pdf", "png": "image/png",
+            "jpg": "image/jpeg", "tif": "image/tiff", "text": "text/plain"}
+
+
+@router.get("/evidence/{evidence_id}/file")
+def evidence_file(
+    evidence_id: int,
+    caller: Caller = Depends(supplier_only),
+    session: Session = Depends(get_session),
+    settings=Depends(get_settings),
+):
+    """The original file, so a person can check a reading against it.
+    The type comes from the bytes, never from the uploaded name, and
+    nosniff stops the browser from guessing something riskier."""
+    record = session.get(Evidence, evidence_id)
+    if record is None or record.organization_id != caller.org.id:
+        raise HTTPException(404, "Evidence not found")
+    data = (settings.evidence_dir / record.sha256).read_bytes()
+    return Response(data, media_type=SHOWN_AS[ocr.file_kind(data)],
+                    headers={"X-Content-Type-Options": "nosniff"})
