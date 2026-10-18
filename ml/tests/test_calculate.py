@@ -97,3 +97,9 @@ def test_cut_off_answer_is_salvaged():
     from ml.extraction.raw_format import parse
     raw = parse('{"op": "sum", "terms": [["47", "t"], ["26", "t"], ["Add the')
     assert raw["terms"] == [["47", "t"], ["26", "t"]]
+
+
+def test_glued_number_and_unit_is_split():
+    from ml.extraction.raw_format import parse
+    raw = parse('{"op": "single", "terms": [["804.94mwh"]]}')
+    assert raw["terms"] == [["804.94", "mwh"]]

@@ -213,6 +213,20 @@ def _fuel(rng: random.Random, i: int, layouts) -> SyntheticDocument:
                 f"from siding {rng.randint(1, 9)}\n")
         truth = {"fuel": "coal", "quantity": tonnes + extra / 1000, "unit": "tonne"}
         terms, op = [[tonnes, "mt"], [extra, "kg"]], "sum"
+    elif layout == "coal_challan_split":
+        tonnes = rng.randint(20, 900)
+        extra = rng.choice([100, 200, 300, 500, 750])
+        text = (f"CHALLAN No {rng.randint(10000, 99999)} dated {rng.randint(1, 28):02d}/0"
+                f"{rng.randint(1, 9)}/2026\nCoal: {tonnes} MT {extra} KG\nTruck {rng.randint(1000, 9999)}\n")
+        truth = {"fuel": "coal", "quantity": tonnes + extra / 1000, "unit": "tonne"}
+        terms, op = [[tonnes, "mt"], [extra, "kg"]], "sum"
+    elif layout == "coal_ref_first":
+        tonnes = rng.randint(200, 9_000)
+        text = (f"Ref {rng.randint(10000, 99999)} / Bill {rng.randint(100, 999)} "
+                f"/ {rng.randint(1, 28):02d}.0{rng.randint(1, 9)}.2026\n"
+                f"Thermal coal {indian_grouping(tonnes)} MT\n")
+        truth = {"fuel": "coal", "quantity": float(tonnes), "unit": "tonne"}
+        terms, op = [[tonnes, "mt"]], "single"
     elif layout == "coal_lots":
         lots = [rng.randint(20, 900) for _ in range(rng.randint(2, 4))]
         text = "COAL RECEIPTS\n" + "".join(f"Lot {k + 1}: {v} MT\n" for k, v in enumerate(lots))
@@ -278,6 +292,13 @@ def _production(rng: random.Random, i: int, layouts) -> SyntheticDocument:
         text = f"{product.upper()} OUTPUT\n{lines}Total for the month is the sum.\n"
         tonnes = sum(weeks_list)
         op, terms = "sum", [[v, "t"] for v in weeks_list]
+    elif layout == "dated_ledger":
+        text = (f"Dispatch book\n{rng.randint(1, 28):02d}/0{rng.randint(1, 9)}/2026  "
+                f"Slip {rng.randint(1000, 9999)}  {product.upper()}  Qty: {tonnes}.0 t\n")
+    elif layout == "ref_then_qty":
+        text = (f"Stock card {rng.randint(100, 999)}\nDate: {rng.randint(1, 28):02d}-0"
+                f"{rng.randint(1, 9)}-2026   Item: {product}   Weight: {tonnes} t   Bin: "
+                f"{rng.randint(1, 60)}\n")
     elif layout == "shift_totals":
         shifts = [rng.randint(5, 400) for _ in range(3)]
         text = (f"PRODUCTION BY SHIFT ({product})\nShift A: {shifts[0]} t   Shift B: {shifts[1]} t   "
@@ -311,9 +332,9 @@ GROUPS = {
                              "present_previous_mwh", "two_meters", "reading_dates",
                              "latest_first"],
         "fuel_invoice": ["coal_kgs_invoice", "coal_quintal", "coal_lots", "coal_t_kg", "coal_tonnes_plus_kg",
-                         "coal_and_words"],
+                         "coal_and_words", "coal_challan_split", "coal_ref_first"],
         "production_log": ["quintal_register", "shift_totals", "daily_log", "fortnight_totals",
-                           "week_notes"],
+                           "week_notes", "dated_ledger", "ref_then_qty"],
     },
     "held_out": {
         "electricity_bill": ["meter_readings"],

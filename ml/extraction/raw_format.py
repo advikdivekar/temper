@@ -67,6 +67,18 @@ def completion_for(doc: SyntheticDocument) -> str:
     return json.dumps(raw, ensure_ascii=False)
 
 
+GLUED = re.compile(r"([^a-zA-Z]+)([a-zA-Z]+)")
+
+
+def _tidy(term):
+    """A [number, unit] pair, or None. Splits a glued "804.94mwh"."""
+    if isinstance(term, list) and len(term) == 1:
+        found = GLUED.fullmatch(str(term[0]))
+        term = [found.group(1), found.group(2)] if found else term
+    ok = isinstance(term, list) and len(term) == 2
+    return term if ok and NUMBER.fullmatch(str(term[0])) else None
+
+
 PAIR = re.compile(r'\[\s*"([^"]+)"\s*,\s*"([A-Za-z]+)"\s*\]')
 
 
@@ -80,8 +92,7 @@ def parse(answer: str) -> dict:
             return {}
         terms = raw.get("terms")
         if isinstance(terms, list):   # drop junk such as a copied sentence
-            raw["terms"] = [t for t in terms if isinstance(t, list)
-                            and len(t) == 2 and NUMBER.fullmatch(str(t[0]))]
+            raw["terms"] = [_tidy(t) for t in terms if _tidy(t)]
         return raw
     except json.JSONDecodeError:
         pass
