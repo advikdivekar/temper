@@ -24,6 +24,9 @@ CONCEPTS IN THIS FILE
         reproducible and tests are stable.
     Indian number grouping
         India writes 125000 as 1,25,000. A common trap for readers.
+    Skills layouts
+        Training only. New wordings that need subtraction or unit
+        conversion, so the model learns the skill, not one format.
     Held out layouts
         Layouts used ONLY to test, never to train or to write prompt
         examples. They measure whether a reader copes with a format it
@@ -76,6 +79,20 @@ def _electricity(rng: random.Random, i: int, layouts) -> SyntheticDocument:
         text = (f"Tata-style Power Distribution Ltd\nStatement period: {month}\n"
                 f"Total energy used ..... {kwh:,} kWh\nAmount payable ..... INR {amount:,}\n")
         value = float(kwh)
+    elif layout == "opening_closing":
+        before = rng.randint(10_000, 500_000)
+        text = (f"ENERGY CONSUMPTION NOTE\nBilling month: {month}\nOpening: {before:,} kWh\n"
+                f"Closing: {before + kwh:,} kWh\n")
+        value = float(kwh)
+    elif layout == "gwh_style":
+        gwh = rng.randint(20, 900) / 1000
+        text = f"ANNUAL TARIFF STATEMENT\nMonth: {month}\nTotal import: {gwh:.3f} GWh\nDemand charge: Rs {amount:,}\n"
+        value = round(gwh * 1_000_000)
+    elif layout == "dated_readings":
+        before = rng.randint(10_000, 500_000)
+        text = (f"READING LOG\nOn 01 {month.split()[0]}: {indian_grouping(before)}\n"
+                f"On 30 {month.split()[0]}: {indian_grouping(before + kwh)}\nUnit: kWh. Usage is the difference.\n")
+        value = float(kwh)
     elif layout == "meter_readings":
         before = rng.randint(10_000, 500_000)
         text = (f"METER READING SHEET\nPeriod: {month}\nPrevious reading: {indian_grouping(before)}\n"
@@ -97,6 +114,21 @@ def _fuel(rng: random.Random, i: int, layouts) -> SyntheticDocument:
         text = (f"TAX INVOICE\nSeller: Bharat Coal Traders\nItem: Thermal coal (non-coking)\n"
                 f"Quantity: {indian_grouping(qty)} MT\nRate: Rs {rng.randint(5000, 9000)} per MT\n")
         truth = {"fuel": "coal", "quantity": float(qty), "unit": "tonne"}
+    elif layout == "coal_kgs_invoice":
+        tonnes = rng.randint(200, 20_000)
+        text = (f"TAX INVOICE No {rng.randint(1000, 9999)}\nGoods: Thermal coal G11\n"
+                f"Qty: {indian_grouping(tonnes * 1000)} KGS\nRate/KG: {rng.randint(5, 9)}.{rng.randint(10, 99)}\n")
+        truth = {"fuel": "coal", "quantity": float(tonnes), "unit": "tonne"}
+    elif layout == "coal_quintal":
+        tonnes = rng.randint(200, 20_000)
+        text = (f"PURCHASE VOUCHER\nItem: Coal (steam)\nQuantity: {indian_grouping(tonnes * 10)} quintal\n"
+                f"(1 quintal = 100 kg)\n")
+        truth = {"fuel": "coal", "quantity": float(tonnes), "unit": "tonne"}
+    elif layout == "coal_mt_kg_split":
+        tonnes = rng.randint(20, 900)
+        extra = rng.choice([100, 250, 500, 750])
+        text = f"DELIVERY RECEIPT\nCoal received: {tonnes} MT {extra} KG\nSupplier ref: {rng.randint(10000, 99999)}\n"
+        truth = {"fuel": "coal", "quantity": tonnes + extra / 1000, "unit": "tonne"}
     elif layout == "coal_kg":
         tonnes = rng.randint(200, 20_000)
         text = (f"WEIGHBRIDGE SLIP\nMaterial: steam coal\nNet weight: {indian_grouping(tonnes * 1000)} kg\n"
@@ -125,6 +157,15 @@ def _production(rng: random.Random, i: int, layouts) -> SyntheticDocument:
     elif layout == "sentence":
         text = f"Monthly report: the plant produced {tonnes} tonnes of {product} this month.\n"
         value = float(tonnes)
+    elif layout == "quintal_register":
+        text = f"GODOWN REGISTER\nItem: {product}\nTotal: {indian_grouping(tonnes * 10)} quintals\n"
+        value = float(tonnes)
+    elif layout == "weekly_totals":
+        parts = [rng.randint(5, 50) for _ in range(3)]
+        tonnes = sum(parts) + (tonnes % 50)
+        weeks = " ".join(f"Wk{k + 1}: {v} t;" for k, v in enumerate(parts + [tonnes - sum(parts)]))
+        text = f"MONTH SUMMARY ({product})\n{weeks}\nAdd the weeks for the month.\n"
+        value = float(tonnes)
     elif layout == "ledger_line":
         text = f"Stores ledger\nDate: 12/05/2026   {product.upper()}   Qty: {tonnes}.0 t   Status: dispatched\n"
         value = float(tonnes)
@@ -134,10 +175,25 @@ def _production(rng: random.Random, i: int, layouts) -> SyntheticDocument:
     return SyntheticDocument(f"prod_{i:04d}", "production_log", layout, text, {"product": product, "tonnes": value})
 
 
-HELD_OUT = {
-    "electricity_bill": ["meter_readings"],
-    "fuel_invoice": ["coal_kg"],
-    "production_log": ["ledger_line"],
+# Layout groups. "base" is the default of each maker. "skills" teaches
+# subtraction and unit conversion in new wording (training only).
+# "held_out" and "held_out_new" are never trained on: they are the test.
+GROUPS = {
+    "skills": {
+        "electricity_bill": ["opening_closing", "gwh_style"],
+        "fuel_invoice": ["coal_kgs_invoice", "coal_quintal"],
+        "production_log": ["quintal_register"],
+    },
+    "held_out": {
+        "electricity_bill": ["meter_readings"],
+        "fuel_invoice": ["coal_kg"],
+        "production_log": ["ledger_line"],
+    },
+    "held_out_new": {
+        "electricity_bill": ["dated_readings"],
+        "fuel_invoice": ["coal_mt_kg_split"],
+        "production_log": ["weekly_totals"],
+    },
 }
 HINDI = str.maketrans("0123456789", "\u0966\u0967\u0968\u0969\u096a\u096b\u096c\u096d\u096e\u096f")
 
@@ -159,11 +215,11 @@ def add_scan_noise(text: str, rng: random.Random) -> str:
 
 
 def generate(count_per_type: int = 40, seed: int = 7, noisy: bool = False,
-             held_out: bool = False) -> list[SyntheticDocument]:
+             group: str = "base") -> list[SyntheticDocument]:
     """Make documents.
 
-    noisy     add scan noise to every document
-    held_out  use only the held out layouts (default: the known layouts)
+    noisy  add scan noise to every document
+    group  base, skills, held_out or held_out_new (see GROUPS)
     """
     rng = random.Random(seed)
     noise_rng = random.Random(seed + 1)   # separate, so noise never shifts the answers
@@ -172,7 +228,7 @@ def generate(count_per_type: int = 40, seed: int = 7, noisy: bool = False,
     docs = []
     for i in range(count_per_type):
         for doc_type, make in makers.items():
-            layouts = HELD_OUT[doc_type] if held_out else None
+            layouts = None if group == "base" else GROUPS[group][doc_type]
             doc = make(rng, i, layouts)
             if noisy:
                 text = add_scan_noise(doc.text, noise_rng)
@@ -183,7 +239,7 @@ def generate(count_per_type: int = 40, seed: int = 7, noisy: bool = False,
 
 
 def hard_bench(count_per_type: int = 60) -> list[SyntheticDocument]:
-    """The harder test: noisy known layouts plus noisy unseen layouts."""
-    known = generate(count_per_type, seed=99, noisy=True)
-    unseen = generate(count_per_type, seed=199, noisy=True, held_out=True)
-    return known + unseen
+    """The harder test: noisy known layouts plus two sets of unseen ones."""
+    return (generate(count_per_type, seed=99, noisy=True)
+            + generate(count_per_type, seed=199, noisy=True, group="held_out")
+            + generate(count_per_type, seed=299, noisy=True, group="held_out_new"))

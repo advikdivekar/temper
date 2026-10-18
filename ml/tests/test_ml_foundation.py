@@ -43,8 +43,12 @@ def test_empty_extractor_scores_zero_and_asks_for_review():
 
 def test_held_out_layouts_are_separate_from_known_ones():
     known = {d.layout for d in generate(60, seed=1)}
-    unseen = {d.layout for d in generate(60, seed=1, held_out=True)}
-    assert known.isdisjoint(unseen) and len(unseen) == 3
+    groups = ["skills", "held_out", "held_out_new"]
+    sets = [{d.layout for d in generate(60, seed=1, group=g)} for g in groups]
+    seen = known | sets[0]
+    assert len(sets[1]) == 3 and len(sets[2]) == 3
+    assert seen.isdisjoint(sets[1]) and seen.isdisjoint(sets[2])
+    assert sets[1].isdisjoint(sets[2])
 
 
 def test_noise_keeps_truth_checkable_and_is_reproducible():
@@ -54,3 +58,11 @@ def test_noise_keeps_truth_checkable_and_is_reproducible():
     clean = generate(20, seed=4)
     assert [d.truth for d in first] == [d.truth for d in clean]
     assert any(a.text != b.text for a, b in zip(first, clean))
+
+
+def test_skill_answers_are_exact():
+    for doc in generate(50, seed=8, group="skills") + generate(50, seed=8, group="held_out_new"):
+        if doc.layout == "coal_quintal":
+            assert "quintal" in doc.text and doc.truth["unit"] == "tonne"
+        if doc.layout == "coal_mt_kg_split":
+            assert round(doc.truth["quantity"] * 1000) % 50 == 0

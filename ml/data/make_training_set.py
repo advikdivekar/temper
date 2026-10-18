@@ -16,12 +16,16 @@ CONCEPTS IN THIS FILE
         document appears in two sets.
     JSONL
         One JSON object per line. The usual file format for training.
+    Mix
+        60 percent known layouts and 40 percent skills layouts. Too much
+        of one thing makes a model forget the rest.
     Held out layouts
         Not included here on purpose. The hard bench uses them to check
         whether the model learned the skill or only the formats.
 """
 
 import json
+import random
 from pathlib import Path
 
 from ml.data.synthetic_documents import generate
@@ -46,8 +50,12 @@ def _write(path: Path, docs) -> None:
 
 
 def main() -> None:
-    train = generate(count_per_type=1500, seed=1001, noisy=True)
-    valid = generate(count_per_type=100, seed=2002, noisy=True)
+    # 60 percent known layouts, 40 percent skills (subtraction, units).
+    train = (generate(count_per_type=1200, seed=1001, noisy=True)
+             + generate(count_per_type=800, seed=1003, noisy=True, group="skills"))
+    random.Random(5).shuffle(train)
+    valid = (generate(count_per_type=60, seed=2002, noisy=True)
+             + generate(count_per_type=40, seed=2004, noisy=True, group="skills"))
     _write(HERE / "train.jsonl", train)
     _write(HERE / "valid.jsonl", valid)
     print(f"train {len(train)} documents, validation {len(valid)} documents")
