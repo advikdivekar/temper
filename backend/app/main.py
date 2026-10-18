@@ -24,7 +24,7 @@ import os
 
 from app.api import (
     routes_auth, routes_demo, routes_insights, routes_plant,
-    routes_requests, routes_statements, routes_trust, routes_verify,
+    routes_reader, routes_requests, routes_statements, routes_trust, routes_verify,
 )
 from app.config import Settings, load_settings
 from app.database import make_session_factory
@@ -48,6 +48,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.include_router(routes_auth.router)
     app.include_router(routes_plant.router)
+    app.include_router(routes_reader.router)
     app.include_router(routes_statements.router)
     app.include_router(routes_trust.router)
     app.include_router(routes_insights.router)

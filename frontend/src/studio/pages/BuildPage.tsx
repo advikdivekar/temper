@@ -2,6 +2,7 @@
 // Build a statement in three plain steps:
 //   1 Plant and period   which plant, and which quarter
 //   2 Documents and data the proof, then what the plant burned and made
+//                        (the AI reader can suggest the numbers; you confirm)
 //   3 Steel and run      where purchased steel comes from, then calculate
 // Continue stays disabled until a step is done and says what is missing.
 
@@ -11,6 +12,7 @@ import { api } from "../../api/client";
 import type { ActivityRecord, Installation, Statement } from "../../api/types";
 import { useToast } from "../../ui/Toast";
 import { DropVault } from "../parts/DropVault";
+import { ReaderPanel } from "../parts/ReaderPanel";
 import type { VaultFile } from "../parts/DropVault";
 
 type Kind = "fuel" | "electricity" | "output";
@@ -130,6 +132,10 @@ export function BuildPage() {
             <DropVault onUploaded={(f) => { setFiles((all) => [f, ...all.filter((x) => x.id !== f.id)]); setFileId(f.id); }} />
             {files.length > 0 && <label className="field">Use this document for the records below
               <select className="select" value={fileId ?? ""} onChange={(e) => setFileId(Number(e.target.value))}>{files.map((f) => <option key={f.id} value={f.id}>{f.filename}</option>)}</select></label>}
+            <ReaderPanel fileId={fileId} plant={plant} period={period}
+              onUploaded={(f) => { setFiles((all) => [f, ...all.filter((x) => x.id !== f.id)]); setFileId(f.id); }}
+              onConfirmed={() => plant && loadRecords(plant)} />
+            <div className="kicker">Or type it yourself</div>
             <div className="chips">{(["fuel", "electricity", "output"] as Kind[]).map((k) => <button key={k} className={`chip ${kind === k ? "on" : ""}`} onClick={() => pickKind(k)}>{k === "fuel" ? "Fuel burned" : k === "electricity" ? "Electricity" : "Products made"}</button>)}</div>
             <div className="chips">
               {kind === "fuel" && FUELS.map((f) => <button key={f.name} className={`chip ${name === f.name ? "on" : ""}`} onClick={() => { setName(f.name); setUnit(f.unit); }}>{f.label}</button>)}

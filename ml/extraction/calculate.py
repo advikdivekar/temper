@@ -195,6 +195,18 @@ def is_grounded(raw: dict, text: str) -> bool:
     return all(page[number] >= times for number, times in copied.items())
 
 
+def explain(raw: dict) -> str:
+    """The copied numbers as a short sum a reviewer can check on the page,
+    for example "5,28,063 kwh minus 2,58,540 kwh"."""
+    terms = [f"{number} {unit}" for number, unit in raw["terms"]]
+    if raw.get("op") == "diff" and len(terms) == 2:
+        first, second = raw["terms"]
+        bigger = to_decimal(first[0]) >= to_decimal(second[0])
+        later, earlier = (terms[0], terms[1]) if bigger else (terms[1], terms[0])
+        return f"{later} minus {earlier}"
+    return " plus ".join(terms)
+
+
 def to_extraction(doc_type: str, raw: dict, text: str) -> Extraction:
     """Final fields from a raw answer, with a confidence from grounding."""
     out = Extraction(doc_type)
@@ -214,13 +226,14 @@ def to_extraction(doc_type: str, raw: dict, text: str) -> Extraction:
     confidence = 0.95 if (is_grounded(raw, text) and sensible and labelled
                           and complete) else 0.4
     number = float(value)
+    how = explain(raw)   # shown beside the number so a person can check it
     if doc_type == "electricity_bill":
-        out.fields.append(ExtractedField("energy_kwh", number, confidence))
+        out.fields.append(ExtractedField("energy_kwh", number, confidence, how))
     elif doc_type == "production_log" and raw.get("product"):
         out.fields.append(ExtractedField("product", raw["product"], confidence))
-        out.fields.append(ExtractedField("tonnes", number, confidence))
+        out.fields.append(ExtractedField("tonnes", number, confidence, how))
     elif doc_type == "fuel_invoice":
         out.fields.append(ExtractedField("fuel", raw["fuel"], confidence))
-        out.fields.append(ExtractedField("quantity", number, confidence))
+        out.fields.append(ExtractedField("quantity", number, confidence, how))
         out.fields.append(ExtractedField("unit", unit_name, confidence))
     return out

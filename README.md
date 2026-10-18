@@ -46,7 +46,7 @@ in the avatar menu.
 | Home | One big number for your role, one sentence, and what needs you |
 | Statements | Each plant and product with four quarter cells; a dot and a word show the state |
 | A statement | The number, a few buttons (sign, share, review, estimate a saving, download pack), and three sections |
-| Build | Three steps: plant and period, documents and data, steel and run |
+| Build | Three steps: plant and period, documents and data, steel and run. In step two the AI reader can suggest the numbers from a text document; you check and confirm |
 | Chain | The supply chain around you as a simple graph |
 | Records (menu) | Ledger with "as it stood" time travel, evidence with re-verify, audit log with chain check |
 | Requests, Library, Organization (menu) | Data requests, EU default values by CN code, your signing key |
@@ -76,6 +76,14 @@ Frontend (http://localhost:3000):
 
     cd frontend && npm install && npm run dev
 
+The AI reader (optional, Apple silicon, needs the ml virtual environment and
+the model folder `ml/models/run8_q4`, which is not in git):
+
+    ml/.venv/bin/python -m ml.serving.extract_service ml/models/run8_q4
+
+Without it the Build page still works, you type the numbers. The reader only
+suggests: nothing reaches the ledger until a person confirms it.
+
 Everything with Docker (untested so far): `docker compose up --build`
 
 To reset the demo, stop the backend, delete `backend/temper.db` and
@@ -88,6 +96,8 @@ Tests:
 
 ## Honest limits
 
+The reader reads plain text documents only (scans and PDFs need OCR, not built),
+was measured on synthetic documents only, and cannot yet use diesel in kilolitres.
 Coal, diesel and grid factors are unverified (IPCC fuel values are confirmed;
 Annex II section G still needs the PDF), and savings ignore the free allocation adjustment. The raw
 regulation files are kept out of git (see .gitignore).

@@ -270,3 +270,20 @@ export interface VersionRow {
   supersedes_id: number | null;
   current: boolean;
 }
+
+// The AI reader's suggestion for one uploaded document.
+export interface ReadField { name: string; value: string | number; confidence: number; how: string }
+export interface DocumentReading {
+  id: number;
+  evidence_id: number;
+  doc_type: string;
+  status: "pending" | "confirmed" | "rejected";
+  needs_review: boolean;
+  model: string;
+  text: string;
+  fields: ReadField[];
+  missing: string[];
+  suggested: { kind: string; name: string; amount: number | string; unit: string; cn_code: string | null } | null;
+  record_id: number | null;
+  corrected: boolean | null;
+}

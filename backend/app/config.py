@@ -10,6 +10,7 @@ SETTINGS
                   the database on purpose, so stealing the database
                   does not let someone forge signatures.
     DATA_DIR      folder with emission factor and default value files
+    READER_URL    where the local AI reader service listens
 """
 
 import os
@@ -25,6 +26,7 @@ class Settings:
     evidence_dir: Path
     key_dir: Path
     data_dir: Path
+    reader_url: str = "http://127.0.0.1:8100"
 
 
 def load_settings() -> Settings:
@@ -33,4 +35,5 @@ def load_settings() -> Settings:
         evidence_dir=Path(os.getenv("EVIDENCE_DIR", "storage/evidence")),
         key_dir=Path(os.getenv("KEY_DIR", "storage/keys")),
         data_dir=Path(os.getenv("DATA_DIR", str(ROOT / "data"))),
+        reader_url=os.getenv("READER_URL", "http://127.0.0.1:8100"),
     )

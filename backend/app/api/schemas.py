@@ -78,3 +78,18 @@ class OpinionRequest(BaseModel):
 
 class ShareRequest(BaseModel):
     recipient_org_id: int
+
+
+class ReadRequest(BaseModel):
+    doc_type: str  # electricity_bill, fuel_invoice or production_log
+
+
+class ConfirmReadRequest(BaseModel):
+    installation_id: int
+    kind: str
+    name: str
+    amount: Decimal
+    unit: str
+    valid_from: date
+    valid_to: date
+    cn_code: str | None = None

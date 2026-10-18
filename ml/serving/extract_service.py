@@ -42,20 +42,20 @@ PORT = 8100
 MAX_BODY = 200_000   # bytes; a bill is a few hundred characters
 
 
-def answer(extract, doc_type: str, text: str) -> dict:
+def answer(extract, doc_type: str, text: str, model: str = "") -> dict:
     """Run the reader and shape the reply."""
     start = time.time()
     result = extract(doc_type, text)
-    fields = [{"name": f.name, "value": f.value, "confidence": f.confidence}
-              for f in result.fields]
+    fields = [{"name": f.name, "value": f.value, "confidence": f.confidence,
+               "how": f.source_text} for f in result.fields]
     missing = [n for n in REQUIRED_FIELDS[doc_type] if result.get(n) is None]
     low = any(f["confidence"] < REVIEW_THRESHOLD for f in fields)
-    return {"doc_type": doc_type, "fields": fields, "missing": missing,
+    return {"doc_type": doc_type, "model": model, "fields": fields, "missing": missing,
             "needs_review": bool(missing) or low,
             "seconds": round(time.time() - start, 2)}
 
 
-def make_handler(extract):
+def make_handler(extract, model: str = ""):
     class Handler(BaseHTTPRequestHandler):
         def _send(self, code: int, body: dict) -> None:
             data = json.dumps(body).encode()
@@ -82,7 +82,7 @@ def make_handler(extract):
                 return self._send(400, {"error": "send doc_type and text"})
             if doc_type not in DOC_TYPES:
                 return self._send(400, {"error": f"doc_type must be one of {DOC_TYPES}"})
-            self._send(200, answer(extract, doc_type, text))
+            self._send(200, answer(extract, doc_type, text, model))
 
         def log_message(self, *args):   # keep the console quiet
             pass
@@ -95,7 +95,8 @@ def main() -> None:
 
     model_path = sys.argv[1] if len(sys.argv) > 1 else "ml/models/run8_q4"
     extract = finetuned_raw.make_extractor(None, base=model_path)
-    server = HTTPServer(("127.0.0.1", PORT), make_handler(extract))
+    name = model_path.rstrip("/").split("/")[-1]
+    server = HTTPServer(("127.0.0.1", PORT), make_handler(extract, name))
     print(f"Serving {model_path} on http://127.0.0.1:{PORT}")
     server.serve_forever()
 

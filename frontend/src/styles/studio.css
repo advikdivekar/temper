@@ -225,3 +225,15 @@ a.qcell:hover { background: rgba(255, 255, 255, 0.6); }
   .line { grid-template-columns: 1fr; gap: 4px; }
   .page { padding-top: 96px; }
 }
+
+/* The AI reader panel: the page on one side, the verdict on the other. */
+.reader { display: flex; flex-direction: column; gap: 12px; padding: 18px 0; border-top: 1px solid var(--rule-2); }
+.review { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.page { margin: 0; padding: 14px; background: #fff; border: 1px solid var(--rule-2); font-family: var(--font-mono); font-size: 12.5px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 320px; overflow: auto; }
+.page mark { background: rgba(255, 90, 31, 0.18); color: inherit; padding: 0 2px; }
+.verdict { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.vrow { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 8px 0; border-bottom: 1px solid var(--rule); text-transform: capitalize; }
+.vrow small { grid-column: 1 / -1; text-transform: none; }
+.warn-note { margin: 0; padding: 8px 12px; border-left: 3px solid var(--warn); background: rgba(184, 110, 0, 0.08); font-size: 13.5px; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 14px; cursor: pointer; }
+@media (max-width: 760px) { .review { grid-template-columns: 1fr; } }
