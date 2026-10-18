@@ -24,3 +24,6 @@ Screenshot*.png
 *.pdf
 *.xlsx
 cellar-*.xml
+
+ml/data/train.jsonl
+ml/data/valid.jsonl

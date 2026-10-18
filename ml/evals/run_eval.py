@@ -30,7 +30,7 @@ import json
 from collections import defaultdict
 from pathlib import Path
 
-from ml.data.synthetic_documents import SyntheticDocument, generate
+from ml.data.synthetic_documents import SyntheticDocument, generate, hard_bench
 from ml.extraction import baseline_regex
 from ml.extraction.schema import REQUIRED_FIELDS
 
@@ -84,8 +84,12 @@ def main() -> None:
     print(f"  document accuracy {report['document_accuracy']:.1%}   field accuracy {report['field_accuracy']:.1%}   review rate {report['review_rate']:.1%}")
     for key, value in report["by_layout"].items():
         print(f"  {key:<42} {value:.0%}")
+    hard = evaluate(baseline_regex.extract, hard_bench(60))
+    print(f"Hard bench: document accuracy {hard['document_accuracy']:.1%}")
+    for key, value in hard["by_layout"].items():
+        print(f"  {key:<42} {value:.0%}")
     out = Path(__file__).parent / "report_baseline.json"
-    out.write_text(json.dumps(report, indent=2))
+    out.write_text(json.dumps({"clean": report, "hard": hard}, indent=2))
     print(f"Report written to {out}")
 
 

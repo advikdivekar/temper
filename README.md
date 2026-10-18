@@ -88,6 +88,6 @@ Tests:
 
 ## Honest limits
 
-Coal, diesel and grid factors are unverified, aluminium mark-ups are assumed
-equal to steel, and savings ignore the free allocation adjustment. The raw
+Coal, diesel and grid factors are unverified (IPCC fuel values are confirmed;
+Annex II section G still needs the PDF), and savings ignore the free allocation adjustment. The raw
 regulation files are kept out of git (see .gitignore).

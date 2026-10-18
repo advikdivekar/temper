@@ -1,23 +1,51 @@
 {
-  "documents": 180,
-  "document_accuracy": 0.6333333333333333,
-  "field_accuracy": 0.6333333333333333,
-  "review_rate": 0.575,
-  "by_type": {
-    "electricity_bill": 0.6166666666666667,
-    "fuel_invoice": 0.6166666666666667,
-    "production_log": 0.6666666666666666
+  "clean": {
+    "documents": 180,
+    "document_accuracy": 0.6333333333333333,
+    "field_accuracy": 0.6333333333333333,
+    "review_rate": 0.575,
+    "by_type": {
+      "electricity_bill": 0.6166666666666667,
+      "fuel_invoice": 0.6166666666666667,
+      "production_log": 0.6666666666666666
+    },
+    "by_layout": {
+      "electricity_bill/mwh_style": 0.0,
+      "electricity_bill/private_utility": 1.0,
+      "electricity_bill/state_board": 1.0,
+      "fuel_invoice/coal_tonnes": 1.0,
+      "fuel_invoice/diesel_kl": 0.0,
+      "fuel_invoice/gas_gj": 1.0,
+      "production_log/kg_style": 0.0,
+      "production_log/sentence": 1.0,
+      "production_log/table_row": 1.0
+    },
+    "note": "SYNTHETIC documents only. Not a claim about real Indian documents."
   },
-  "by_layout": {
-    "electricity_bill/mwh_style": 0.0,
-    "electricity_bill/private_utility": 1.0,
-    "electricity_bill/state_board": 1.0,
-    "fuel_invoice/coal_tonnes": 1.0,
-    "fuel_invoice/diesel_kl": 0.0,
-    "fuel_invoice/gas_gj": 1.0,
-    "production_log/kg_style": 0.0,
-    "production_log/sentence": 1.0,
-    "production_log/table_row": 1.0
-  },
-  "note": "SYNTHETIC documents only. Not a claim about real Indian documents."
+  "hard": {
+    "documents": 360,
+    "document_accuracy": 0.325,
+    "field_accuracy": 0.32916666666666666,
+    "review_rate": 0.7944444444444444,
+    "by_type": {
+      "electricity_bill": 0.31666666666666665,
+      "fuel_invoice": 0.3416666666666667,
+      "production_log": 0.31666666666666665
+    },
+    "by_layout": {
+      "electricity_bill/meter_readings": 0.0,
+      "electricity_bill/mwh_style": 0.0,
+      "electricity_bill/private_utility": 1.0,
+      "electricity_bill/state_board": 1.0,
+      "fuel_invoice/coal_kg": 0.0,
+      "fuel_invoice/coal_tonnes": 1.0,
+      "fuel_invoice/diesel_kl": 0.0,
+      "fuel_invoice/gas_gj": 1.0,
+      "production_log/kg_style": 0.0,
+      "production_log/ledger_line": 0.0,
+      "production_log/sentence": 1.0,
+      "production_log/table_row": 0.7368421052631579
+    },
+    "note": "SYNTHETIC documents only. Not a claim about real Indian documents."
+  }
 }

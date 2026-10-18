@@ -39,3 +39,18 @@ def test_perfect_extractor_scores_100_percent():
 def test_empty_extractor_scores_zero_and_asks_for_review():
     report = evaluate(lambda doc_type, text: Extraction(doc_type), generate(10, seed=5))
     assert report["document_accuracy"] == 0.0 and report["review_rate"] == 1.0
+
+
+def test_held_out_layouts_are_separate_from_known_ones():
+    known = {d.layout for d in generate(60, seed=1)}
+    unseen = {d.layout for d in generate(60, seed=1, held_out=True)}
+    assert known.isdisjoint(unseen) and len(unseen) == 3
+
+
+def test_noise_keeps_truth_checkable_and_is_reproducible():
+    first = generate(20, seed=4, noisy=True)
+    second = generate(20, seed=4, noisy=True)
+    assert [d.text for d in first] == [d.text for d in second]
+    clean = generate(20, seed=4)
+    assert [d.truth for d in first] == [d.truth for d in clean]
+    assert any(a.text != b.text for a, b in zip(first, clean))

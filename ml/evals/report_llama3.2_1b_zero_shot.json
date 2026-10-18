@@ -1,0 +1,26 @@
+{
+  "documents": 180,
+  "document_accuracy": 0.35,
+  "field_accuracy": 0.5666666666666667,
+  "review_rate": 0.06944444444444445,
+  "by_type": {
+    "electricity_bill": 0.4166666666666667,
+    "fuel_invoice": 0.05,
+    "production_log": 0.5833333333333334
+  },
+  "by_layout": {
+    "electricity_bill/mwh_style": 0.30434782608695654,
+    "electricity_bill/private_utility": 0.7619047619047619,
+    "electricity_bill/state_board": 0.125,
+    "fuel_invoice/coal_tonnes": 0.14285714285714285,
+    "fuel_invoice/diesel_kl": 0.0,
+    "fuel_invoice/gas_gj": 0.0,
+    "production_log/kg_style": 0.0,
+    "production_log/sentence": 1.0,
+    "production_log/table_row": 0.7619047619047619
+  },
+  "note": "SYNTHETIC documents only. Not a claim about real Indian documents.",
+  "model": "llama3.2:1b",
+  "mode": "zero_shot",
+  "seconds": 270.5
+}

@@ -13,7 +13,8 @@ how far it is verified. Update this file whenever a source changes.
   informational, so check values against the regulation before real use.
 - Iron and steel and aluminium only. Direct emissions only (indirect is N/A).
 - Mark-ups: 10 percent in 2026, 20 percent in 2027, 30 percent from 2028
-  (confirmed for cement, hydrogen and steel rows; aluminium assumed the same).
+  (confirmed for iron, steel and aluminium; Commission page notes a consolidated
+  IR 2025/2621 text is coming and should become the single reference).
 - India: 7318 15 threaded screws and bolts 5.720, 7318 16 nuts 5.140
   (base, before mark-up).
 
@@ -44,5 +45,11 @@ how far it is verified. Update this file whenever a source changes.
 ## Not yet verified
 
 - Section G of Annex II (fuel factors) and the CEA guide.
-- Aluminium mark-up percentages.
+- Aluminium mark-up percentages: now CONFIRMED at 10, 20, 30 percent.
 - Free allocation adjustment (savings figures ignore it).
+
+## Cross check, India rows
+Base values for 7318 15, 7318 16, 7318 22 00, 7208, 7213/7214, 7601, 7616 10 00
+match an independent reading of the Excel (v2, 6 Aug 2026). Still to check
+against the IR 2026/1740 PDF: the 7318 15 and 7318 16 rows. The Excel is
+informational only; the regulation is the binding text.
