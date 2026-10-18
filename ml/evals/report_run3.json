@@ -1,0 +1,60 @@
+{
+  "clean": {
+    "documents": 180,
+    "document_accuracy": 0.8166666666666667,
+    "field_accuracy": 0.9083333333333333,
+    "review_rate": 0.2111111111111111,
+    "silent_error_rate": 0.0,
+    "caught_error_rate": 0.09166666666666666,
+    "by_type": {
+      "electricity_bill": 0.95,
+      "fuel_invoice": 0.7833333333333333,
+      "production_log": 0.7166666666666667
+    },
+    "by_layout": {
+      "electricity_bill/mwh_style": 1.0,
+      "electricity_bill/private_utility": 1.0,
+      "electricity_bill/state_board": 0.8125,
+      "fuel_invoice/coal_tonnes": 0.5714285714285714,
+      "fuel_invoice/diesel_kl": 1.0,
+      "fuel_invoice/gas_gj": 0.75,
+      "production_log/kg_style": 0.3,
+      "production_log/sentence": 1.0,
+      "production_log/table_row": 0.8571428571428571
+    },
+    "note": "SYNTHETIC documents only. Not a claim about real Indian documents.",
+    "seconds": 126.2
+  },
+  "hard": {
+    "documents": 540,
+    "document_accuracy": 0.4740740740740741,
+    "field_accuracy": 0.737037037037037,
+    "review_rate": 0.16574074074074074,
+    "silent_error_rate": 0.15555555555555556,
+    "caught_error_rate": 0.10740740740740741,
+    "by_type": {
+      "electricity_bill": 0.3,
+      "fuel_invoice": 0.5333333333333333,
+      "production_log": 0.5888888888888889
+    },
+    "by_layout": {
+      "electricity_bill/dated_readings": 0.0,
+      "electricity_bill/meter_readings": 0.0,
+      "electricity_bill/mwh_style": 1.0,
+      "electricity_bill/private_utility": 0.9444444444444444,
+      "electricity_bill/state_board": 0.75,
+      "fuel_invoice/coal_kg": 0.75,
+      "fuel_invoice/coal_mt_kg_split": 0.0,
+      "fuel_invoice/coal_tonnes": 0.8181818181818182,
+      "fuel_invoice/diesel_kl": 1.0,
+      "fuel_invoice/gas_gj": 0.7368421052631579,
+      "production_log/kg_style": 0.5294117647058824,
+      "production_log/ledger_line": 0.9666666666666667,
+      "production_log/sentence": 0.9583333333333334,
+      "production_log/table_row": 0.8421052631578947,
+      "production_log/weekly_totals": 0.0
+    },
+    "note": "SYNTHETIC documents only. Not a claim about real Indian documents.",
+    "seconds": 379.0
+  }
+}

@@ -21,6 +21,9 @@ CONCEPTS IN THIS FILE
     Review rate
         The share of fields below a confidence threshold. These go to a
         human. A good extractor is accurate AND knows when it is unsure.
+    Silent error
+        A wrong field the reader was confident about, so nobody reviews
+        it. The dangerous kind. A caught error is wrong but flagged.
     Slicing
         Reporting by layout shows where a reader fails. An average can
         hide a layout that scores zero.
@@ -49,7 +52,7 @@ def _same(truth, got) -> bool:
 def evaluate(extract, docs: list[SyntheticDocument]) -> dict:
     by_type = defaultdict(lambda: [0, 0, 0])      # docs right, docs, fields right
     by_layout = defaultdict(lambda: [0, 0])       # docs right, docs
-    fields_total = fields_right = review = 0
+    fields_total = fields_right = review = silent = caught = 0
     for doc in docs:
         extraction = extract(doc.doc_type, doc.text)
         doc_right = True
@@ -59,8 +62,11 @@ def evaluate(extract, docs: list[SyntheticDocument]) -> dict:
             ok = item is not None and _same(doc.truth[name], item.value)
             fields_right += ok
             doc_right &= ok
-            if item is None or item.confidence < REVIEW_THRESHOLD:
-                review += 1
+            flagged = item is None or item.confidence < REVIEW_THRESHOLD
+            review += flagged
+            if not ok:
+                caught += flagged        # wrong, but a person will look
+                silent += not flagged    # wrong and nobody will look
         by_type[doc.doc_type][0] += doc_right
         by_type[doc.doc_type][1] += 1
         by_layout[f"{doc.doc_type}/{doc.layout}"][0] += doc_right
@@ -71,6 +77,8 @@ def evaluate(extract, docs: list[SyntheticDocument]) -> dict:
         "document_accuracy": docs_right / len(docs),
         "field_accuracy": fields_right / fields_total,
         "review_rate": review / fields_total,
+        "silent_error_rate": silent / fields_total,
+        "caught_error_rate": caught / fields_total,
         "by_type": {k: v[0] / v[1] for k, v in by_type.items()},
         "by_layout": {k: v[0] / v[1] for k, v in sorted(by_layout.items())},
         "note": "SYNTHETIC documents only. Not a claim about real Indian documents.",
