@@ -9,9 +9,8 @@ CONCEPTS IN THIS FILE
         A small HTTP call with a short timeout. If the reader is not
         running we say so plainly, and manual entry still works.
     Text from a file
-        The reader takes text. A plain text file is read as is. Scanned
-        images and PDFs need OCR, which is not built yet, so we refuse
-        them with a clear message instead of guessing.
+        The reader takes text. Turning a file into text (plain text,
+        PDF, scan or photo) is the job of ocr.py.
     Suggested record
         The reader's fields mapped to the shape of a ledger record. A
         person checks and confirms it before anything is stored.
@@ -23,7 +22,7 @@ import urllib.request
 
 from certify_engine.quantity import UNITS
 
-MAX_CHARS = 20_000
+MAX_CHARS = 20_000   # the reader never gets more than this
 
 # Customs codes we know for products the reader can name.
 KNOWN_CN = {"bolts": "73181590", "nuts": "73181600", "washers": "73182200"}
@@ -31,25 +30,6 @@ KNOWN_CN = {"bolts": "73181590", "nuts": "73181600", "washers": "73182200"}
 
 class ReaderUnavailable(Exception):
     """The reader service did not answer."""
-
-
-class UnreadableFile(Exception):
-    """The file is not text the reader can use."""
-
-
-def text_from_bytes(data: bytes) -> str:
-    """Decode a plain text document, or explain why we cannot."""
-    try:
-        text = data.decode("utf-8")
-    except UnicodeDecodeError:
-        text = ""
-    printable = sum(ch.isprintable() or ch in "\n\r\t" for ch in text)
-    if not text.strip() or "\x00" in text or printable < 0.95 * len(text):
-        raise UnreadableFile(
-            "This looks like an image or a PDF. Reading scans is not built "
-            "yet. Upload the text of the document, or type the numbers."
-        )
-    return text[:MAX_CHARS]
 
 
 def reader_status(url: str) -> bool:

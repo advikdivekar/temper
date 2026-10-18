@@ -24,7 +24,7 @@ from app.evidence import verify_evidence
 from app.ledger import add_record
 from app.models import DocumentRead, Evidence
 from app.services.audit import append_audit
-from app.services import reader
+from app.services import ocr, reader
 
 router = APIRouter(tags=["reader"])
 supplier_only = require_role("supplier")
@@ -42,7 +42,9 @@ def _json(read: DocumentRead) -> dict:
         "status": read.status, "needs_review": read.needs_review,
         "model": read.model_name, "text": read.source_text,
         "fields": stored["fields"], "missing": stored["missing"],
-        "suggested": stored["suggested"], "record_id": read.record_id,
+        "suggested": stored["suggested"],
+        "source": stored.get("source", "text"),
+        "ocr_confidence": stored.get("ocr_confidence"), "record_id": read.record_id,
         "corrected": read.corrected, "created_at": read.created_at,
     }
 
@@ -76,21 +78,28 @@ def read_evidence(
         raise HTTPException(409, "The stored file no longer matches its fingerprint")
     data = (settings.evidence_dir / evidence.sha256).read_bytes()
     try:
-        text = reader.text_from_bytes(data)
-    except reader.UnreadableFile as error:
+        page = ocr.read_file(data)
+    except ocr.NothingToRead as error:
         raise HTTPException(422, str(error))
+    except ocr.OcrUnavailable as error:
+        raise HTTPException(503, f"Scan reading needs {error}.")
+    text = page.text[:reader.MAX_CHARS]
     try:
         answer = reader.read_document(settings.reader_url, body.doc_type, text)
     except reader.ReaderUnavailable:
         raise HTTPException(
             503, "The reader is not running. You can still type the numbers.")
     stored = {"fields": answer["fields"], "missing": answer["missing"],
-              "suggested": reader.suggested_record(body.doc_type, answer["fields"])}
+              "suggested": reader.suggested_record(body.doc_type, answer["fields"]),
+              "source": page.source, "ocr_confidence": page.ocr_confidence}
+    # OCR can misread a digit and the model cannot see that, so a scan
+    # is always checked by a person.
+    needs_review = bool(answer["needs_review"]) or page.is_scan
     read = DocumentRead(
         organization_id=caller.org.id, evidence_id=evidence.id,
         doc_type=body.doc_type, model_name=answer.get("model", "local reader"),
         source_text=text, suggested_json=json.dumps(stored),
-        needs_review=bool(answer["needs_review"]), created_at=_now(),
+        needs_review=needs_review, created_at=_now(),
     )
     session.add(read)
     session.commit()

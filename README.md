@@ -96,8 +96,11 @@ Tests:
 
 ## Honest limits
 
-The reader reads plain text documents only (scans and PDFs need OCR, not built),
-was measured on synthetic documents only, and cannot yet use diesel in kilolitres.
+The reader takes text, PDFs and pictures (tesseract and poppler must be
+installed: `brew install tesseract poppler`). A PDF with a text layer is copied
+exactly; a scan or photo goes through OCR, is always checked by a person, and is
+refused if too blurry. It was tested on drawn scans of three synthetic
+documents, not real bills, was measured on synthetic documents only, and cannot yet use diesel in kilolitres.
 Coal, diesel and grid factors are unverified (IPCC fuel values are confirmed;
 Annex II section G still needs the PDF), and savings ignore the free allocation adjustment. The raw
 regulation files are kept out of git (see .gitignore).

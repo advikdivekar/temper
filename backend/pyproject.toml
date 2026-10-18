@@ -6,7 +6,7 @@ requires-python = ">=3.11"
 dependencies = ["sqlalchemy>=2.0", "fastapi", "uvicorn", "cryptography", "python-multipart", "pydantic>=2", "certify_engine", "psycopg[binary]"]
 
 [project.optional-dependencies]
-dev = ["pytest", "httpx"]
+dev = ["pytest", "httpx", "pillow"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -284,6 +284,8 @@ export interface DocumentReading {
   fields: ReadField[];
   missing: string[];
   suggested: { kind: string; name: string; amount: number | string; unit: string; cn_code: string | null } | null;
+  source: "text" | "pdf text" | "scan";
+  ocr_confidence: number | null;
   record_id: number | null;
   corrected: boolean | null;
 }

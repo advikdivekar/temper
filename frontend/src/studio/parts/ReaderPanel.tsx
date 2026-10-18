@@ -99,6 +99,12 @@ export function ReaderPanel({ fileId, plant, period, onUploaded, onConfirmed }: 
 
       {reading && (
         <div className="review">
+          {reading.source === "scan" && (
+            <p className="warn-note scan-note">
+              Read from a picture ({Math.round(reading.ocr_confidence ?? 0)}% sure of the letters).
+              A digit may be misread, so compare each number with your original.
+            </p>
+          )}
           <Page text={reading.text} hows={reading.fields.map((f) => f.how)} />
           <div className="verdict">
             {reading.fields.map((f) => (

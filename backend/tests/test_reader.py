@@ -81,10 +81,10 @@ def test_reject_leaves_no_record(tmp_path, monkeypatch):
 
 def test_image_and_offline_reader_give_clear_errors(tmp_path, monkeypatch):
     client, headers, plant = setup(tmp_path, monkeypatch)
-    image = upload(client, headers, bytes(range(256)) * 4, "scan.png")
+    image = upload(client, headers, bytes(range(256)) * 4, "junk.bin")
     bad = client.post(f"/evidence/{image}/read", headers=headers,
                       json={"doc_type": "electricity_bill"})
-    assert bad.status_code == 422 and "image or a PDF" in bad.json()["detail"]
+    assert bad.status_code == 422 and "not text" in bad.json()["detail"]
 
     def down(*args, **kwargs):
         raise reader.ReaderUnavailable("connection refused")
