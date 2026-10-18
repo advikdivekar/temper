@@ -1,0 +1,27 @@
+{
+  "fresh": {
+    "documents": 180,
+    "document_accuracy": 0.31666666666666665,
+    "field_accuracy": 0.4305555555555556,
+    "review_rate": 0.5416666666666666,
+    "silent_error_rate": 0.09166666666666666,
+    "caught_error_rate": 0.4777777777777778,
+    "by_type": {
+      "electricity_bill": 0.06666666666666667,
+      "fuel_invoice": 0.05,
+      "production_log": 0.8333333333333334
+    },
+    "by_layout": {
+      "electricity_bill/consumer_line": 0.0,
+      "electricity_bill/feeder_mwh_sum": 0.0,
+      "electricity_bill/prev_curr_units": 0.2222222222222222,
+      "fuel_invoice/coal_invoice_rate": 0.15789473684210525,
+      "fuel_invoice/diesel_two_deliveries": 0.0,
+      "fuel_invoice/gas_two_months": 0.0,
+      "production_log/batch_dated": 0.9090909090909091,
+      "production_log/batch_kg_sum": 0.7407407407407407
+    },
+    "note": "SYNTHETIC documents only. Not a claim about real Indian documents.",
+    "seconds": 154.1
+  }
+}

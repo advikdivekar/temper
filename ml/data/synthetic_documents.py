@@ -157,6 +157,24 @@ def _electricity(rng: random.Random, i: int, layouts) -> SyntheticDocument:
                 f"Earlier reading: {indian_grouping(before)} kWh\nPeriod: {month}\n")
         value = float(kwh)
         raw = {"op": "diff", "terms": [[before + kwh, "kwh"], [before, "kwh"]]}
+    elif layout == "prev_curr_units":
+        before = rng.randint(10_000, 500_000)
+        text = (f"CONSUMER LEDGER FOLIO {rng.randint(100, 999)}\n"
+                f"Prev. units {before:,}   Curr. units {before + kwh:,}   (kWh)\n"
+                f"Due date: {rng.randint(1, 28):02d}/0{rng.randint(1, 9)}/2026\n")
+        value = float(kwh)
+        raw = {"op": "diff", "terms": [[before + kwh, "kwh"], [before, "kwh"]]}
+    elif layout == "feeder_mwh_sum":
+        first = rng.randint(2_000, 90_000) / 100
+        second = rng.randint(2_000, 90_000) / 100
+        text = (f"FEEDER REPORT {month}\nFeeder 1: {first:.2f} MWh\n"
+                f"Feeder 2: {second:.2f} MWh\nCombined import is the total.\n")
+        value = round((first + second) * 1000)
+        raw = {"op": "sum", "terms": [[first, "mwh"], [second, "mwh"]]}
+    elif layout == "consumer_line":
+        text = (f"Consumer {rng.randint(1000000, 9999999)} | Units: {indian_grouping(kwh)} kWh "
+                f"| Due {rng.randint(1, 28):02d}/0{rng.randint(1, 9)}/2026\n")
+        value = float(kwh)
     elif layout == "meter_readings":
         before = rng.randint(10_000, 500_000)
         text = (f"METER READING SHEET\nPeriod: {month}\nPrevious reading: {indian_grouping(before)}\n"
@@ -244,6 +262,24 @@ def _fuel(rng: random.Random, i: int, layouts) -> SyntheticDocument:
                 f"Truck: GJ{rng.randint(10, 39)}XY{rng.randint(1000, 9999)}\n")
         truth = {"fuel": "coal", "quantity": float(tonnes), "unit": "tonne"}
         terms, op = [[tonnes * 1000, "kg"]], "single"
+    elif layout == "diesel_two_deliveries":
+        first, second = rng.randint(3, 120), rng.randint(3, 120)
+        text = (f"DIESEL RECEIPT BOOK\nDelivery 1: {first} KL\nDelivery 2: {second} KL\n"
+                f"Tanker {rng.randint(1000, 9999)}\n")
+        truth = {"fuel": "diesel", "quantity": float(first + second), "unit": "kl"}
+        fuel, terms, op = "diesel", [[first, "kl"], [second, "kl"]], "sum"
+    elif layout == "gas_two_months":
+        first, second = rng.randint(1_000, 40_000), rng.randint(1_000, 40_000)
+        text = (f"GAS STATEMENT {rng.randint(2025, 2026)}\nApr: {first:,} GJ, May: {second:,} GJ\n"
+                f"Invoice {rng.randint(10000, 99999)}\n")
+        truth = {"fuel": "natural_gas", "quantity": float(first + second), "unit": "gj"}
+        fuel, terms, op = "natural_gas", [[first, "gj"], [second, "gj"]], "sum"
+    elif layout == "coal_invoice_rate":
+        tonnes = rng.randint(200, 9_000)
+        text = (f"Invoice {rng.randint(1000, 9999)} dt {rng.randint(1, 28):02d}/0{rng.randint(1, 9)}/2026\n"
+                f"Coal (G10) {indian_grouping(tonnes)} MT @ Rs {rng.randint(5000, 9000)}/MT\n")
+        truth = {"fuel": "coal", "quantity": float(tonnes), "unit": "tonne"}
+        terms, op = [[tonnes, "mt"]], "single"
     elif layout == "gas_gj":
         qty = rng.randint(1_000, 90_000)
         text = (f"GAS SUPPLY INVOICE\nProduct: Natural gas (PNG)\nSupplied energy: {qty:,} GJ\n"
@@ -312,6 +348,15 @@ def _production(rng: random.Random, i: int, layouts) -> SyntheticDocument:
         op, terms = "sum", [[v, "t"] for v in days]
     elif layout == "ledger_line":
         text = f"Stores ledger\nDate: 12/05/2026   {product.upper()}   Qty: {tonnes}.0 t   Status: dispatched\n"
+    elif layout == "batch_kg_sum":
+        batches = [rng.randint(20, 400) * 50 for _ in range(2)]
+        text = (f"{product.upper()} BATCH SHEET\nBatch 1: {batches[0]:,} kg; "
+                f"Batch 2: {batches[1]:,} kg\n")
+        tonnes = sum(batches) / 1000
+        op, terms = "sum", [[v, "kg"] for v in batches]
+    elif layout == "batch_dated":
+        text = (f"Batch No {rng.randint(1000, 9999)} dated {rng.randint(1, 28):02d}/0"
+                f"{rng.randint(1, 9)}/2026: {product} {tonnes} t\n")
     else:
         text = f"Dispatch register\nItem: {product}\nTotal weight: {indian_grouping(tonnes * 1000)} kg\n"
         terms = [[tonnes * 1000, "kg"]]
@@ -346,6 +391,14 @@ GROUPS = {
         "fuel_invoice": ["coal_mt_kg_split"],
         "production_log": ["weekly_totals"],
     },
+}
+# Fresh test: layouts written AFTER the earlier benches were inspected and
+# never looked at while fixing anything. Score it once per model.
+GROUPS["fresh"] = {
+    "electricity_bill": ["prev_curr_units", "feeder_mwh_sum", "consumer_line"],
+    "fuel_invoice": ["diesel_two_deliveries", "gas_two_months",
+                     "coal_invoice_rate"],
+    "production_log": ["batch_kg_sum", "batch_dated"],
 }
 HINDI = str.maketrans("0123456789", "\u0966\u0967\u0968\u0969\u096a\u096b\u096c\u096d\u096e\u096f")
 
@@ -396,3 +449,8 @@ def hard_bench(count_per_type: int = 60) -> list[SyntheticDocument]:
     return (generate(count_per_type, seed=99, noisy=True)
             + generate(count_per_type, seed=199, noisy=True, group="held_out")
             + generate(count_per_type, seed=299, noisy=True, group="held_out_new"))
+
+
+def fresh_bench(count_per_type: int = 60) -> list[SyntheticDocument]:
+    """Only layouts nobody has tuned against, with scan noise."""
+    return generate(count_per_type, seed=777, noisy=True, group="fresh")

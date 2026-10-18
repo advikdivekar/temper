@@ -39,7 +39,7 @@ def test_hindi_digits_are_grounded():
 
 def test_raw_terms_reproduce_truth_on_every_layout():
     docs = []
-    for group in ["base", "skills", "held_out", "held_out_new"]:
+    for group in ["base", "skills", "held_out", "held_out_new", "fresh"]:
         docs += generate(80, seed=11, noisy=True, group=group)
         docs += generate(40, seed=12, noisy=True, group=group, balanced=True)
     for doc in docs:
@@ -58,7 +58,7 @@ def test_verbatim_round_trip_on_every_layout():
     import json
     from ml.extraction.raw_format import completion_for, parse
     docs = []
-    for group in ["base", "skills", "held_out", "held_out_new"]:
+    for group in ["base", "skills", "held_out", "held_out_new", "fresh"]:
         docs += generate(80, seed=21, noisy=True, group=group)
         docs += generate(40, seed=22, noisy=True, group=group, balanced=True)
     for doc in docs:

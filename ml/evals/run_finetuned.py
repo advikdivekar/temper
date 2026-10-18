@@ -14,7 +14,7 @@ import sys
 import time
 from pathlib import Path
 
-from ml.data.synthetic_documents import generate, hard_bench
+from ml.data.synthetic_documents import fresh_bench, generate, hard_bench
 from ml.evals.run_eval import evaluate
 from ml.extraction import finetuned_mlx, finetuned_raw
 
@@ -26,7 +26,10 @@ def main() -> None:
     use_raw = len(sys.argv) > 2 and sys.argv[2] == "raw"
     extract = (finetuned_raw if use_raw else finetuned_mlx).make_extractor(adapter)
     results = {}
-    for name, docs in [("clean", generate(60, seed=7)), ("hard", hard_bench(60))]:
+    benches = [("clean", generate(60, seed=7)), ("hard", hard_bench(60))]
+    if "fresh" in sys.argv:   # the untouched test, score it once per model
+        benches = [("fresh", fresh_bench(60))]
+    for name, docs in benches:
         start = time.time()
         report = evaluate(extract, docs)
         report["seconds"] = round(time.time() - start, 1)
@@ -36,9 +39,10 @@ def main() -> None:
               f"   silent errors {report['silent_error_rate']:.1%}   caught {report['caught_error_rate']:.1%}")
         for key, value in report["by_layout"].items():
             print(f"  {key:<42} {value:.0%}")
-    if results["hard"]["document_accuracy"] > TOO_GOOD:
+    hard = results.get("hard", results.get("fresh"))
+    if hard["document_accuracy"] > TOO_GOOD:
         print("WARNING: hard bench score above 97 percent. Suspect an easy or leaky bench.")
-    out = Path(__file__).parent / f"report_{Path(adapter).name}.json"
+    out = Path(__file__).parent / f"report_{Path(adapter).name}{'_fresh' if 'fresh' in results else ''}.json"
     out.write_text(json.dumps(results, indent=2))
 
 
