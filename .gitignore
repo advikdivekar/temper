@@ -27,3 +27,5 @@ cellar-*.xml
 
 ml/data/train.jsonl
 ml/data/valid.jsonl
+ml/.venv/
+ml/adapters/

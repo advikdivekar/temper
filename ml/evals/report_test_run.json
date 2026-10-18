@@ -1,0 +1,53 @@
+{
+  "clean": {
+    "documents": 180,
+    "document_accuracy": 0.6888888888888889,
+    "field_accuracy": 0.8444444444444444,
+    "review_rate": 0.0,
+    "by_type": {
+      "electricity_bill": 0.8666666666666667,
+      "fuel_invoice": 0.5,
+      "production_log": 0.7
+    },
+    "by_layout": {
+      "electricity_bill/mwh_style": 0.8260869565217391,
+      "electricity_bill/private_utility": 0.9523809523809523,
+      "electricity_bill/state_board": 0.8125,
+      "fuel_invoice/coal_tonnes": 0.09523809523809523,
+      "fuel_invoice/diesel_kl": 1.0,
+      "fuel_invoice/gas_gj": 0.3125,
+      "production_log/kg_style": 0.4,
+      "production_log/sentence": 1.0,
+      "production_log/table_row": 0.7142857142857143
+    },
+    "note": "SYNTHETIC documents only. Not a claim about real Indian documents.",
+    "seconds": 80.4
+  },
+  "hard": {
+    "documents": 360,
+    "document_accuracy": 0.49444444444444446,
+    "field_accuracy": 0.7347222222222223,
+    "review_rate": 0.0,
+    "by_type": {
+      "electricity_bill": 0.39166666666666666,
+      "fuel_invoice": 0.5166666666666667,
+      "production_log": 0.575
+    },
+    "by_layout": {
+      "electricity_bill/meter_readings": 0.0,
+      "electricity_bill/mwh_style": 0.6818181818181818,
+      "electricity_bill/private_utility": 0.8333333333333334,
+      "electricity_bill/state_board": 0.85,
+      "fuel_invoice/coal_kg": 0.5666666666666667,
+      "fuel_invoice/coal_tonnes": 0.09090909090909091,
+      "fuel_invoice/diesel_kl": 1.0,
+      "fuel_invoice/gas_gj": 0.3684210526315789,
+      "production_log/kg_style": 0.35294117647058826,
+      "production_log/ledger_line": 0.4666666666666667,
+      "production_log/sentence": 0.9583333333333334,
+      "production_log/table_row": 0.631578947368421
+    },
+    "note": "SYNTHETIC documents only. Not a claim about real Indian documents.",
+    "seconds": 161.8
+  }
+}
